@@ -6,12 +6,21 @@ import {
   ImageIcon,
   Upload,
   Sun,
-  LogInIcon,
+  GithubIcon,
+  type LucideIcon,
 } from "lucide-react";
 import { motion, useInView } from "motion/react";
 import { useRef } from "react";
+import { Badge } from "@/components/ui/badge";
 
-const FEATURES = [
+type Feature = {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  badge?: string;
+};
+
+const FEATURES: Feature[] = [
   {
     icon: FolderIcon,
     title: "Folders & organization",
@@ -19,13 +28,15 @@ const FEATURES = [
   },
   {
     icon: SearchIcon,
-    title: "Search",
-    description: "Find any bookmark quickly with instant search across titles and URLs.",
+    title: "On-device indexing & semantic search",
+    description:
+      "Bookmarks are indexed on your device. Find anything with search across titles, URLs, and descriptions.",
   },
   {
     icon: ImageIcon,
-    title: "Auto metadata",
-    description: "Favicons and preview images fetched automatically for every link.",
+    title: "Auto metadata & descriptions",
+    description:
+      "Favicons, previews, and descriptions pulled directly from each page—no third-party metadata APIs.",
   },
   {
     icon: Upload,
@@ -38,11 +49,12 @@ const FEATURES = [
     description: "Switch between light and dark mode, or follow your system preference.",
   },
   {
-    icon: LogInIcon,
-    title: "Google & GitHub sign-in",
-    description: "Sign in with Google or GitHub. No passwords to remember.",
+    icon: GithubIcon,
+    title: "GitHub Sync",
+    description: "Planned: sync your bookmarks directly to your GitHub account.",
+    badge: "Planned",
   },
-] as const;
+];
 
 interface LandingFeaturesProps {
   prefersReducedMotion?: boolean;
@@ -100,9 +112,19 @@ export function LandingFeatures({
               <div className="flex size-10 items-center justify-center rounded-lg bg-muted mb-4">
                 <feature.icon className="size-5 text-muted-foreground" />
               </div>
-              <h3 className="text-sm font-medium text-foreground">
-                {feature.title}
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-medium text-foreground">
+                  {feature.title}
+                </h3>
+                {feature.badge ? (
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] uppercase tracking-wide px-2 py-0.5"
+                  >
+                    {feature.badge}
+                  </Badge>
+                ) : null}
+              </div>
               <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
                 {feature.description}
               </p>
