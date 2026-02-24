@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { authComponent, getOptionalAuthUser } from "./auth";
 
@@ -592,15 +592,7 @@ export const fetchBookmarkEmbeddingsByIds = query({
     }
     const docs = await Promise.all(args.ids.map((id) => ctx.db.get(id)));
     return docs
-      .filter(
-        (
-          doc,
-        ): doc is {
-          _id: Id<"bookmarkEmbeddings">;
-          bookmarkId: Id<"bookmarks">;
-          userId: string;
-        } => doc !== null,
-      )
+      .filter((doc): doc is Doc<"bookmarkEmbeddings"> => doc !== null)
       .filter((doc) => doc.userId === user._id)
       .map((doc) => ({ _id: doc._id, bookmarkId: doc.bookmarkId }));
   },

@@ -88,7 +88,7 @@ async function requestWorker(payload: Omit<WorkerRequest, "id">) {
   }
 
   const id = ++requestCounter;
-  const message: WorkerRequest = { ...payload, id };
+  const message = { ...payload, id } as WorkerRequest;
 
   const response = await new Promise<WorkerResponse>((resolve, reject) => {
     pendingRequests.set(id, { resolve, reject });
@@ -118,11 +118,15 @@ export async function embedBookmarkQuery(
     const runtime = await import("@/lib/embedding-runtime");
     return runtime.embedBookmarkQuery(text, preferred);
   }
-  const response = await requestWorker({
-    type: "embed",
+  const embedPayload = {
+    type: "embed" as const,
     text,
     preferred,
-  });
+  };
+  const response = await requestWorker(embedPayload);
+  if (response.type !== "embed") {
+    throw new Error("Unexpected worker response type");
+  }
   return response.result;
 }
 
@@ -136,4 +140,5 @@ export async function warmupEmbeddingModel(preferred?: EmbeddingDtype) {
     type: "warmup",
     preferred,
   });
+  return;
 }
