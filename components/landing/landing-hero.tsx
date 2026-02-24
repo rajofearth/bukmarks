@@ -73,7 +73,7 @@ export function LandingHero({
         <div className="relative aspect-square max-h-[320px] lg:max-h-[400px] mx-auto">
           {!imageError ? (
             <Image
-              src="/landing-sketch.webp"
+              src="/landing-sketch.png"
               alt="Person organizing bookmarks"
               fill
               className="object-contain"

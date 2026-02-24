@@ -1,20 +1,18 @@
 "use client";
 
 import {
-  FolderIcon,
-  SearchIcon,
   ImageIcon,
   Upload,
-  Sun,
-  GithubIcon,
   type LucideIcon,
 } from "lucide-react";
+import Image from "next/image";
 import { motion, useInView } from "motion/react";
 import { useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 
 type Feature = {
-  icon: LucideIcon;
+  icon?: LucideIcon;
+  image?: string;
   title: string;
   description: string;
   badge?: string;
@@ -22,12 +20,12 @@ type Feature = {
 
 const FEATURES: Feature[] = [
   {
-    icon: FolderIcon,
+    image: "/folder-hand-drawn.png",
     title: "Folders & organization",
     description: "Organize links into nested folders. Drag and drop to keep everything tidy.",
   },
   {
-    icon: SearchIcon,
+    image: "/search-hand-drawn.png",
     title: "On-device indexing & semantic search",
     description:
       "Bookmarks are indexed on your device. Find anything with search across titles, URLs, and descriptions.",
@@ -44,12 +42,12 @@ const FEATURES: Feature[] = [
     description: "Import your existing bookmarks from Chrome, Firefox, or any browser export.",
   },
   {
-    icon: Sun,
+    image: "/theme-hand-drawn.png",
     title: "Light & dark theme",
     description: "Switch between light and dark mode, or follow your system preference.",
   },
   {
-    icon: GithubIcon,
+    image: "/github-hand-drawn.png",
     title: "GitHub Sync",
     description: "Planned: sync your bookmarks directly to your GitHub account.",
     badge: "Planned",
@@ -109,8 +107,18 @@ export function LandingFeatures({
                 ease: [0.25, 0.46, 0.45, 0.94],
               }}
             >
-              <div className="flex size-10 items-center justify-center rounded-lg bg-muted mb-4">
-                <feature.icon className="size-5 text-muted-foreground" />
+              <div className="flex size-14 items-center justify-center mb-4 overflow-hidden">
+                {feature.image ? (
+                  <Image
+                    src={feature.image}
+                    alt=""
+                    width={56}
+                    height={56}
+                    className="size-14 object-contain"
+                  />
+                ) : feature.icon ? (
+                  <feature.icon className="size-6 text-muted-foreground" />
+                ) : null}
               </div>
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-medium text-foreground">
