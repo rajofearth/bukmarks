@@ -29,18 +29,18 @@ export function LandingFooter() {
           >
             Roadmap
           </Link>
-          <a
-            href="#"
+          <Link
+            href="/terms"
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             Terms
-          </a>
-          <a
-            href="#"
+          </Link>
+          <Link
+            href="/privacy"
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             Privacy
-          </a>
+          </Link>
           <a
             href="https://github.com/rajofearth/bukmarks"
             target="_blank"
