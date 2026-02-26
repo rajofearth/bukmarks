@@ -2,7 +2,7 @@
 
 import { motion, useInView } from "motion/react";
 import { useRef } from "react";
-import { Puzzle, Github } from "lucide-react";
+import { Puzzle, Github, Chrome, Phone } from "lucide-react";
 
 interface LandingComingSoonProps {
   prefersReducedMotion?: boolean;
@@ -10,8 +10,8 @@ interface LandingComingSoonProps {
 
 const COMING_SOON_ITEMS = [
   {
-    icon: Puzzle,
-    title: "Read later extension",
+    icon: Chrome,
+    title: "Browser extension",
     description:
       "Quickly save links to your bookmarks from any page. One click with our browser extension on desktop.",
     available: true,
@@ -23,6 +23,13 @@ const COMING_SOON_ITEMS = [
       "Sync your bookmarks to a GitHub repository. Version control, backup, and share your reading list.",
     available: false,
   },
+  {
+    icon: Phone,
+    title: "Mobile app (iOS & Android)",
+    description:
+      "Coming soon to iOS and Android.",
+    available: false,
+  }
 ];
 
 export function LandingComingSoon({

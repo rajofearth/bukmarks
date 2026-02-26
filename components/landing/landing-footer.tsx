@@ -23,12 +23,6 @@ export function LandingFooter() {
           Bukmarks
         </Link>
         <div className="flex items-center gap-6">
-          <Link
-            href="/auth"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Sign in
-          </Link>
           <a
             href="#"
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -42,7 +36,7 @@ export function LandingFooter() {
             Privacy
           </a>
           <a
-            href="https://github.com"
+            href="https://github.com/rajofearth/bukmarks"
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -52,7 +46,7 @@ export function LandingFooter() {
         </div>
       </motion.div>
       <motion.p
-        className="mt-6 max-w-4xl mx-auto text-center text-xs text-muted-foreground/70"
+        className="mt-4 max-w-4xl mx-auto text-center text-xs text-muted-foreground/70"
         initial={{ opacity: 0 }}
         animate={inView ? { opacity: 1 } : {}}
         transition={{ duration: 0.4, delay: 0.08 }}
