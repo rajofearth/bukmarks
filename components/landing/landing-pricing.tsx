@@ -16,13 +16,14 @@ export function LandingPricing({
   prefersReducedMotion = false,
 }: LandingPricingProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const inView = useInView(ref, { once: true, amount: 0.15 });
   const duration = prefersReducedMotion ? 0 : 0.45;
 
   return (
     <section
       ref={ref}
-      className="relative px-6 py-20 lg:py-28 overflow-hidden isolate"
+      id="pricing"
+      className="relative px-6 py-20 lg:py-28 overflow-hidden isolate scroll-mt-20"
     >
       {/* Background: image layer */}
       <div className="absolute inset-0 z-0" aria-hidden>

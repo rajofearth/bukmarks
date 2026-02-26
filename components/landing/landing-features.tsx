@@ -62,7 +62,7 @@ export function LandingFeatures({
   prefersReducedMotion = false,
 }: LandingFeaturesProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const inView = useInView(ref, { once: true, amount: 0.15 });
   const stagger = prefersReducedMotion ? 0 : 0.06;
   const duration = prefersReducedMotion ? 0 : 0.4;
 

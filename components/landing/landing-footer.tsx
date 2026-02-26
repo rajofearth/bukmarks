@@ -6,15 +6,15 @@ import { useRef } from "react";
 
 export function LandingFooter() {
   const ref = useRef<HTMLElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-50px" });
+  const inView = useInView(ref, { once: true, amount: 0.2 });
 
   return (
     <footer ref={ref} className="border-t border-border px-6 py-8 bg-background">
       <motion.div
         className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4"
-        initial={{ opacity: 0 }}
-        animate={inView ? { opacity: 1 } : {}}
-        transition={{ duration: 0.4 }}
+        initial={{ opacity: 0, y: 12 }}
+        animate={inView ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
       >
         <Link
           href="/"
@@ -47,9 +47,9 @@ export function LandingFooter() {
       </motion.div>
       <motion.p
         className="mt-4 max-w-4xl mx-auto text-center text-xs text-muted-foreground/70"
-        initial={{ opacity: 0 }}
-        animate={inView ? { opacity: 1 } : {}}
-        transition={{ duration: 0.4, delay: 0.08 }}
+        initial={{ opacity: 0, y: 8 }}
+        animate={inView ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.4, delay: 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
       >
         Made by{" "}
         <a

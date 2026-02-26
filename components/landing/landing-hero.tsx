@@ -62,10 +62,10 @@ export function LandingHero({
               {isAuthenticated ? "Open app" : "Get started"}
             </Link>
           </Button>
-          <Button asChild variant="outline" size="lg" className="text-base">
-            <a href="#features" className="inline-flex items-center gap-2">
+          <Button asChild variant="outline" size="lg" className="text-base transition-all duration-300">
+            <a href="#features" className="group inline-flex items-center gap-2">
               Learn more
-              <ChevronDownIcon className="size-4" />
+              <ChevronDownIcon className="size-4 transition-transform duration-300 group-hover:translate-y-0.5" />
             </a>
           </Button>
         </motion.div>

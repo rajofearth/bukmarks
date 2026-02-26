@@ -12,7 +12,7 @@ export function LandingMockup({
   prefersReducedMotion = false,
 }: LandingMockupProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const inView = useInView(ref, { once: true, amount: 0.15 });
   const duration = prefersReducedMotion ? 0 : 0.6;
   const ease = [0.25, 0.46, 0.45, 0.94] as const;
 

@@ -36,13 +36,13 @@ export function LandingComingSoon({
   prefersReducedMotion = false,
 }: LandingComingSoonProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const inView = useInView(ref, { once: true, amount: 0.15 });
   const duration = prefersReducedMotion ? 0 : 0.45;
   const stagger = prefersReducedMotion ? 0 : 0.1;
   const ease = [0.25, 0.46, 0.45, 0.94] as const;
 
   return (
-    <section ref={ref} className="px-6 py-12 lg:py-20">
+    <section ref={ref} id="coming-soon" className="px-6 py-12 lg:py-20 scroll-mt-20">
       <div className="max-w-md mx-auto">
         <motion.h2
           className="text-2xl font-semibold text-center text-foreground mb-8"
@@ -116,8 +116,8 @@ export function LandingComingSoon({
             transition={{ duration, delay: stagger + 0.2, ease }}
           >
             <a
-              href="#"
-              className="text-xs text-foreground border border-border px-6 py-2 rounded-full hover:bg-muted/50 transition-colors bg-background"
+              href="#coming-soon"
+              className="text-xs text-foreground border border-border px-6 py-2 rounded-full hover:bg-muted/50 transition-colors duration-300 bg-background"
             >
               View roadmap
             </a>
