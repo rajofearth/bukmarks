@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { motion } from "motion/react";
 import { LandingComingSoon } from "./landing-coming-soon";
 import { LandingFeatures } from "./landing-features";
 import { LandingFooter } from "./landing-footer";
@@ -28,7 +29,15 @@ export function LandingPage({ isAuthenticated }: LandingPageProps) {
   return (
     <div className="min-h-svh flex flex-col bg-background">
       {/* Nav */}
-      <nav className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-sm">
+      <motion.nav
+        className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-sm"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{
+          duration: prefersReducedMotion ? 0 : 0.35,
+          ease: [0.25, 0.46, 0.45, 0.94],
+        }}
+      >
         <div className="flex h-14 items-center justify-between px-6 max-w-6xl mx-auto">
           <Link
             href="/"
@@ -42,7 +51,7 @@ export function LandingPage({ isAuthenticated }: LandingPageProps) {
             </Link>
           </Button>
         </div>
-      </nav>
+      </motion.nav>
 
       {/* Main */}
       <main className="flex-1">
