@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Chrome, Github, Smartphone } from "lucide-react";
+import { Chrome, Github, Smartphone, Twitter } from "lucide-react";
 
 export type RoadmapStatus = "done" | "in-progress" | "planned";
 
@@ -27,6 +27,12 @@ export const ROADMAP_ITEMS: {
     icon: Smartphone,
     title: "Mobile app (iOS & Android)",
     description: "Coming soon to iOS and Android.",
+    status: "planned",
+  },
+  {
+    icon: Twitter,
+    title: "Twitter Sync",
+    description: "Sync your Twitter bookmarks to your Bukmarks account.",
     status: "planned",
   },
 ];
