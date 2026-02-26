@@ -1,16 +1,15 @@
 "use client";
 
 import Image from "next/image";
-import { ImageIcon, Upload, type LucideIcon } from "lucide-react";
 import { motion, useInView } from "motion/react";
 import { useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 
-const FEATURES: { icon?: LucideIcon; image?: string; title: string; description: string; badge?: string }[] = [
+const FEATURES: { image: string; title: string; description: string; badge?: string }[] = [
   { image: "/folder-hand-drawn.png", title: "Folders & organization", description: "Organize links into nested folders. Drag and drop to keep everything tidy." },
   { image: "/search-hand-drawn.png", title: "On-device indexing & semantic search", description: "Bookmarks are indexed on your device. Find anything with search across titles, URLs, and descriptions." },
-  { icon: ImageIcon, title: "Auto metadata & descriptions", description: "Favicons, previews, and descriptions pulled directly from each page—no third-party metadata APIs." },
-  { icon: Upload, title: "Browser import", description: "Import your existing bookmarks from Chrome, Firefox, or any browser export." },
+  { image: "/auot-metadata-description-hand-drawn.png", title: "Auto metadata & descriptions", description: "Favicons, previews, and descriptions pulled directly from each page—no third-party metadata APIs." },
+  { image: "/browser-import-hand-drawn.png", title: "Browser import", description: "Import your existing bookmarks from Chrome, Firefox, or any browser export." },
   { image: "/theme-hand-drawn.png", title: "Light & dark theme", description: "Switch between light and dark mode, or follow your system preference." },
   { image: "/github-hand-drawn.png", title: "GitHub Sync", description: "Planned: sync your bookmarks directly to your GitHub account.", badge: "Planned" },
 ];
@@ -69,7 +68,6 @@ export function LandingFeatures({ prefersReducedMotion = false }: LandingFeature
               }}
             >
               <div className="flex size-14 items-center justify-center mb-4 overflow-hidden shrink-0">
-                {feature.image ? (
                   <Image
                     src={feature.image}
                     alt=""
@@ -77,9 +75,6 @@ export function LandingFeatures({ prefersReducedMotion = false }: LandingFeature
                     height={56}
                     className="size-14 object-contain"
                   />
-                ) : feature.icon ? (
-                  <feature.icon className="size-6 text-muted-foreground" />
-                ) : null}
               </div>
               <div className="flex items-center justify-center gap-2 flex-wrap">
                 <h3 className="text-sm font-medium text-foreground">
