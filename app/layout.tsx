@@ -1,18 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { ConvexClientProvider } from "@/app/ConvexClientProvider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { getToken } from "@/lib/auth-server";
 
-const fontSans = JetBrains_Mono({
-  subsets: ["latin"],
+const fontSans = localFont({
+  src: "../public/fonts/JetBrainsMono-Regular.ttf",
   variable: "--font-sans",
 });
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL ?? "https://bukmarks.app"
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://bukmarks.vercel.app"
   ),
   title: { default: "Bukmarks", template: "%s | Bukmarks" },
   description: "Organize and manage your bookmarks with ease",
@@ -28,19 +28,22 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     siteName: "Bukmarks",
-    images: [
-      {
-        url: "/bukmarks-icon-light.png",
-        width: 512,
-        height: 512,
-        alt: "Bukmarks",
-      },
-    ],
+    url: "/",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Bukmarks",
     description: "Organize and manage your bookmarks with ease",
+    site: "@yashrajmaher",
+    creator: "@yashrajmaher",
+  },
+  alternates: {
+    canonical: "./",
+  },
+  other: {
+    "twitter:url":
+      process.env.NEXT_PUBLIC_APP_URL ?? "https://bukmarks.vercel.app",
+    "twitter:domain": "bukmarks.vercel.app",
   },
   robots: { index: true, follow: true },
 };
