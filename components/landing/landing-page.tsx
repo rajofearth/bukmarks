@@ -2,7 +2,7 @@
 
 import { BukmarksLogo } from "@/components/bukmarks-logo";
 import { Button } from "@/components/ui/button";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { LandingComingSoon } from "./landing-coming-soon";
@@ -17,7 +17,7 @@ interface LandingPageProps {
 }
 
 export function LandingPage({ isAuthenticated }: LandingPageProps) {
-  const prefersReducedMotion = useReducedMotion();
+  const prefersReducedMotion = useReducedMotion() ?? false;
 
   return (
     <div className="min-h-svh flex flex-col bg-background">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { useReducedMotion } from "motion/react";
 import { PRIVACY_LAST_UPDATED, PRIVACY_SECTIONS } from "@/lib/privacy-content";
 import { motion, useInView } from "motion/react";
 import { useRef } from "react";
@@ -11,7 +11,7 @@ const EASE = [0.25, 0.46, 0.45, 0.94] as const;
 export function PrivacyPage() {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, amount: 0.15 });
-  const prefersReducedMotion = useReducedMotion();
+  const prefersReducedMotion = useReducedMotion() ?? false;
 
   const duration = prefersReducedMotion ? 0 : 0.4;
   const stagger = prefersReducedMotion ? 0 : 0.08;
