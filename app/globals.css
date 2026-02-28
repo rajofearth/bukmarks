@@ -122,7 +122,8 @@
     @apply border-border outline-ring/50;
   }
   html {
-    @apply overflow-x-hidden;
+    overflow-x: hidden;
+
     scroll-behavior: smooth;
   }
   @media (prefers-reduced-motion: reduce) {
@@ -131,6 +132,8 @@
     }
   }
   body {
-    @apply overflow-x-hidden bg-background text-foreground;
+    overflow-x: hidden;
+    background: var(--background);
+    color: var(--foreground);
   }
 }

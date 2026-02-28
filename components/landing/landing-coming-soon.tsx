@@ -1,15 +1,14 @@
 "use client";
 
-import { Chrome, Github, Smartphone } from "lucide-react";
+import { ROADMAP_ITEMS } from "@/lib/roadmap-data";
 import Link from "next/link";
 import { motion, useInView } from "motion/react";
 import { useRef } from "react";
 
-const ITEMS = [
-  { icon: Chrome, title: "Browser extension", description: "Quickly save links to your bookmarks from any page. One click with our browser extension on desktop.", available: true },
-  { icon: Github, title: "GitHub Sync", description: "Sync your bookmarks to a GitHub repository. Version control, backup, and share your reading list.", available: false },
-  { icon: Smartphone, title: "Mobile app (iOS & Android)", description: "Coming soon to iOS and Android.", available: false },
-];
+const ITEMS = ROADMAP_ITEMS.map((item) => ({
+  ...item,
+  available: item.status === "in-progress" || item.status === "done",
+}));
 
 const EASE = [0.25, 0.46, 0.45, 0.94] as const;
 
@@ -44,10 +43,17 @@ export function LandingComingSoon({ prefersReducedMotion = false }: LandingComin
                   className={`rounded-xl p-5 border border-border ${
                     item.available
                       ? "bg-card"
-                      : "bg-background opacity-60"
+                      : "bg-background"
                   }`}
                   initial={{ opacity: 0, y: 16 }}
-                  animate={inView ? { opacity: 1, y: 0 } : {}}
+                  animate={
+                    inView
+                      ? {
+                          opacity: item.available ? 1 : 0.6,
+                          y: 0,
+                        }
+                      : {}
+                  }
                   transition={{
                     duration,
                     delay: stagger + i * 0.1,

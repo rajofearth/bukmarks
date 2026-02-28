@@ -93,9 +93,9 @@ export function LandingHero({
           ) : null}
           <div
             className={cn("absolute inset-0 flex items-center justify-center", !imageError && "hidden")}
-            aria-hidden={!imageError}
+            aria-hidden
           >
-            <svg viewBox="0 0 400 400" fill="none" className="w-full h-full text-foreground/25 dark:text-foreground/15">
+            <svg viewBox="0 0 400 400" fill="none" className="w-full h-full text-foreground/25 dark:text-foreground/15" role="presentation">
               <path d="M120 280 Q140 200 160 180 L180 160 Q200 150 220 160 L240 180 Q260 200 280 220 L280 320 L120 320 Z" stroke="currentColor" strokeWidth="2" strokeDasharray="6 4" fill="none" />
               <rect x="140" y="200" width="160" height="100" rx="4" stroke="currentColor" strokeWidth="1.5" fill="none" />
               <rect x="150" y="210" width="140" height="70" rx="2" fill="currentColor" fillOpacity="0.06" />

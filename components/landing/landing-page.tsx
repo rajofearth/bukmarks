@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { motion } from "motion/react";
 import { BukmarksLogo } from "@/components/bukmarks-logo";
 import { Button } from "@/components/ui/button";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import Link from "next/link";
+import { motion } from "motion/react";
 import { LandingComingSoon } from "./landing-coming-soon";
 import { LandingFeatures } from "./landing-features";
 import { LandingFooter } from "./landing-footer";
@@ -17,14 +17,7 @@ interface LandingPageProps {
 }
 
 export function LandingPage({ isAuthenticated }: LandingPageProps) {
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setPrefersReducedMotion(mq.matches);
-    const h = () => setPrefersReducedMotion(mq.matches);
-    mq.addEventListener("change", h);
-    return () => mq.removeEventListener("change", h);
-  }, []);
+  const prefersReducedMotion = useReducedMotion();
 
   return (
     <div className="min-h-svh flex flex-col bg-background">

@@ -3,6 +3,8 @@ export const TERMS_LAST_UPDATED = "February 26, 2025";
 export const TERMS_SECTIONS: {
   title: string;
   content: string[];
+  linkUrl?: string;
+  linkText?: string;
 }[] = [
   {
     title: "Acceptance of terms",
@@ -56,7 +58,9 @@ export const TERMS_SECTIONS: {
   {
     title: "Contact",
     content: [
-      "For questions about these Terms of Service, contact us via https://yashrajmaher.vercel.app",
+      "For questions about these Terms of Service, contact us via",
     ],
+    linkUrl: "https://yashrajmaher.vercel.app",
+    linkText: "yashrajmaher.vercel.app",
   },
 ];

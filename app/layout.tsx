@@ -40,11 +40,14 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "./",
   },
-  other: {
-    "twitter:url":
-      process.env.NEXT_PUBLIC_APP_URL ?? "https://bukmarks.vercel.app",
-    "twitter:domain": "bukmarks.vercel.app",
-  },
+  other: (() => {
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ?? "https://bukmarks.vercel.app";
+    return {
+      "twitter:url": baseUrl,
+      "twitter:domain": new URL(baseUrl).hostname,
+    };
+  })(),
   robots: { index: true, follow: true },
 };
 

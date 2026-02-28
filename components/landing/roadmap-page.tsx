@@ -1,26 +1,19 @@
 "use client";
 
 import { BukmarksLogo } from "@/components/bukmarks-logo";
+import { Button } from "@/components/ui/button";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { LandingFooter } from "./landing-footer";
 import { LandingRoadmap } from "./landing-roadmap";
-import { Button } from "@/components/ui/button";
 
 interface RoadmapPageProps {
   isAuthenticated: boolean;
 }
 
 export function RoadmapPage({ isAuthenticated }: RoadmapPageProps) {
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setPrefersReducedMotion(mq.matches);
-    const h = () => setPrefersReducedMotion(mq.matches);
-    mq.addEventListener("change", h);
-    return () => mq.removeEventListener("change", h);
-  }, []);
+  const prefersReducedMotion = useReducedMotion();
 
   return (
     <div className="min-h-svh flex flex-col bg-background">

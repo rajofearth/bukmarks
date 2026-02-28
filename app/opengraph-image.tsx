@@ -43,7 +43,7 @@ export default async function Image() {
           <span
             style={{
               fontSize: 56,
-              fontWeight: 600,
+              fontWeight: 400,
               color: "white",
               fontFamily: "JetBrains Mono",
             }}

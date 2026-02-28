@@ -3,6 +3,8 @@ export const PRIVACY_LAST_UPDATED = "February 26, 2025";
 export const PRIVACY_SECTIONS: {
   title: string;
   content: string[];
+  linkUrl?: string;
+  linkText?: string;
 }[] = [
   {
     title: "Introduction",
@@ -63,7 +65,9 @@ export const PRIVACY_SECTIONS: {
   {
     title: "Contact",
     content: [
-      "For questions about this Privacy Policy or your data, contact us via https://yashrajmaher.vercel.app",
+      "For questions about this Privacy Policy or your data, contact us via",
     ],
+    linkUrl: "https://yashrajmaher.vercel.app",
+    linkText: "yashrajmaher.vercel.app",
   },
 ];

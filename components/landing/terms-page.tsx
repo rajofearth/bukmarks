@@ -1,24 +1,17 @@
 "use client";
 
-import { motion, useInView } from "motion/react";
-import { useEffect, useRef, useState } from "react";
-import { LegalPageLayout } from "./legal-page-layout";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { TERMS_LAST_UPDATED, TERMS_SECTIONS } from "@/lib/terms-content";
+import { motion, useInView } from "motion/react";
+import { useRef } from "react";
+import { LegalPageLayout } from "./legal-page-layout";
 
 const EASE = [0.25, 0.46, 0.45, 0.94] as const;
 
 export function TermsPage() {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, amount: 0.15 });
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setPrefersReducedMotion(mq.matches);
-    const h = () => setPrefersReducedMotion(mq.matches);
-    mq.addEventListener("change", h);
-    return () => mq.removeEventListener("change", h);
-  }, []);
+  const prefersReducedMotion = useReducedMotion();
 
   const duration = prefersReducedMotion ? 0 : 0.4;
   const stagger = prefersReducedMotion ? 0 : 0.08;
@@ -76,23 +69,23 @@ export function TermsPage() {
                   {section.title}
                 </h2>
                 <div className="space-y-3">
-                  {section.title === "Contact" ? (
+                  {section.linkUrl && section.linkText ? (
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      For questions about these Terms of Service, contact us via{" "}
+                      {section.content[0]}{" "}
                       <a
-                        href="https://yashrajmaher.vercel.app"
+                        href={section.linkUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="underline underline-offset-2 text-foreground"
                       >
-                        yashrajmaher.vercel.app
+                        {section.linkText}
                       </a>
                       .
                     </p>
                   ) : (
                     section.content.map((paragraph, j) => (
                       <p
-                        key={j}
+                        key={`${section.title}-${j}`}
                         className="text-sm text-muted-foreground leading-relaxed"
                       >
                         {paragraph}

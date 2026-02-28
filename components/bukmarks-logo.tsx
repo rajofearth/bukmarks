@@ -16,7 +16,7 @@ const SIZE_CLASSES = {
 interface BukmarksLogoProps {
   size?: keyof typeof SIZE_CLASSES;
   className?: string;
-  href?: string;
+  href?: Route;
   showLabel?: boolean;
 }
 
@@ -58,7 +58,7 @@ export function BukmarksLogo({
   if (href) {
     return (
       <Link
-        href={href as Route}
+        href={href}
         className="inline-flex items-center gap-2 hover:text-muted-foreground transition-colors"
       >
         {content}

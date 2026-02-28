@@ -304,7 +304,10 @@ export function FoldersSidebar({
     <div className={cn("flex h-full flex-col", className)}>
       <div className="flex flex-col gap-4 p-4 border-b border-border">
         <div className="flex items-center justify-between">
-        <BukmarksLogo href="/" size="sm" showLabel />
+          <span id="folders-sidebar-label" className="sr-only">
+            Folders
+          </span>
+          <BukmarksLogo href="/" size="sm" showLabel />
           <AddFolderDialog onSubmit={onAddFolder} />
         </div>
       </div>
