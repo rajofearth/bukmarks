@@ -1,5 +1,6 @@
 "use client";
 
+import type { ModelLoadProgressInfo } from "@/lib/embedding-runtime";
 import type { EmbeddingDtype } from "@/lib/semantic-search";
 
 type WorkerRequest =
@@ -105,9 +106,10 @@ async function requestWorker(payload: Omit<WorkerRequest, "id">) {
 export async function embedBookmarkDocument(
   text: string,
   preferred?: EmbeddingDtype,
+  progressCallback?: (info: ModelLoadProgressInfo) => void,
 ) {
   const runtime = await import("@/lib/embedding-runtime");
-  return runtime.embedBookmarkDocument(text, preferred);
+  return runtime.embedBookmarkDocument(text, preferred, progressCallback);
 }
 
 export async function embedBookmarkQuery(

@@ -48,6 +48,7 @@ import { useGeneralStore } from "@/hooks/use-general-store";
 import { useImportBookmarks } from "@/hooks/use-import-bookmarks";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSemanticIndexer } from "@/hooks/use-semantic-indexer";
+import { useSemanticIndexerStore } from "@/hooks/use-semantic-indexer-store";
 import {
   downloadBookmarkFile,
   generateBookmarkHtml,
@@ -99,6 +100,15 @@ export function DataSettings() {
     pauseBackfill,
     resumeBackfill,
   } = useSemanticIndexer();
+  const modelLoadingStage = useSemanticIndexerStore(
+    (state) => state.modelLoadingStage,
+  );
+  const modelLoadingProgress = useSemanticIndexerStore(
+    (state) => state.modelLoadingProgress,
+  );
+  const modelLoadingFile = useSemanticIndexerStore(
+    (state) => state.modelLoadingFile,
+  );
 
   // ── Export handler ───────────────────────────────────────────
   const handleExport = useCallback(() => {
@@ -143,6 +153,12 @@ export function DataSettings() {
     semanticSearchEnabled && hasBookmarksForIndexing;
   const indexProgress =
     totalCount > 0 ? Math.round((processedCount / totalCount) * 100) : 0;
+  const modelProgressRounded = Math.round(modelLoadingProgress);
+  const isFullyIndexed =
+    (embeddingStats?.indexedBookmarks ?? 0) ===
+      (embeddingStats?.totalBookmarks ?? 0) &&
+    (embeddingStats?.pendingBookmarks ?? 0) === 0 &&
+    (embeddingStats?.totalBookmarks ?? 0) > 0;
 
   const toIndexPayload = useCallback(() => {
     return (bookmarks ?? []).map((bookmark) => ({
@@ -422,20 +438,57 @@ export function DataSettings() {
 
               {isRunning && (
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>
-                      Indexing {processedCount} / {totalCount}
-                    </span>
-                    <span>{indexProgress}%</span>
-                  </div>
-                  <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
-                    <motion.div
-                      className="h-full rounded-full bg-foreground/70"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${indexProgress}%` }}
-                      transition={{ duration: 0.2, ease: "easeOut" }}
-                    />
-                  </div>
+                  {modelLoadingStage !== "idle" && modelLoadingStage !== "done" ? (
+                    <>
+                      <div className="flex items-center justify-between gap-1.5 text-xs text-muted-foreground">
+                        {modelLoadingProgress === 0 && (
+                          <Loader2 className="size-3.5 shrink-0 animate-spin" />
+                        )}
+                        <span>
+                          {modelLoadingStage === "initiate"
+                            ? "Preparing model..."
+                            : modelLoadingStage === "download" ||
+                                modelLoadingStage === "progress"
+                              ? `Downloading model${
+                                  modelLoadingFile
+                                    ? ` ${modelLoadingFile}`
+                                    : ""
+                                }...`
+                              : "Loading model..."}
+                        </span>
+                        {modelLoadingProgress > 0 && (
+                          <span>{modelProgressRounded}%</span>
+                        )}
+                      </div>
+                      <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+                        <motion.div
+                          className="h-full rounded-full bg-foreground/70"
+                          initial={{ width: 0 }}
+                          animate={{
+                            width: `${modelLoadingProgress}%`,
+                          }}
+                          transition={{ duration: 0.2, ease: "easeOut" }}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>
+                          Indexing {processedCount} / {totalCount}
+                        </span>
+                        <span>{indexProgress}%</span>
+                      </div>
+                      <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+                        <motion.div
+                          className="h-full rounded-full bg-foreground/70"
+                          initial={{ width: 0 }}
+                          animate={{ width: `${indexProgress}%` }}
+                          transition={{ duration: 0.2, ease: "easeOut" }}
+                        />
+                      </div>
+                    </>
+                  )}
                   {errorCount > 0 && (
                     <p className="text-xs text-destructive">
                       Failed items: {errorCount}
@@ -449,7 +502,7 @@ export function DataSettings() {
                   <button
                     type="button"
                     onClick={() => handleStartIndexing(false)}
-                    disabled={!canRunSemanticIndexing}
+                    disabled={!canRunSemanticIndexing || isFullyIndexed}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-foreground px-3 py-2 text-xs font-medium text-background disabled:opacity-50"
                   >
                     <Play className="size-3.5" />
@@ -479,10 +532,14 @@ export function DataSettings() {
                 <button
                   type="button"
                   onClick={() => handleStartIndexing(true)}
-                  disabled={!canRunSemanticIndexing}
+                  disabled={isRunning}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium disabled:opacity-50"
                 >
-                  <RefreshCw className="size-3.5" />
+                  {isRunning ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <RefreshCw className="size-3.5" />
+                  )}
                   Reindex all
                 </button>
               </div>

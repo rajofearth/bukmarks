@@ -14,6 +14,15 @@ import {
   QUERY_PREFIX,
 } from "@/lib/semantic-search";
 
+export type ModelLoadProgressInfo = {
+  status?: string;
+  progress?: number;
+  file?: string;
+  name?: string;
+  loaded?: number;
+  total?: number;
+};
+
 type ModelBundle = {
   dtype: EmbeddingDtype;
   tokenizer: PreTrainedTokenizer;
@@ -71,6 +80,7 @@ function getDtypeOrder(preferred?: EmbeddingDtype): EmbeddingDtype[] {
 
 export async function loadEmbeddingBundle(
   preferred?: EmbeddingDtype,
+  progressCallback?: (info: ModelLoadProgressInfo) => void,
 ): Promise<ModelBundle> {
   env.allowLocalModels = false;
   const dtypeOrder = getDtypeOrder(preferred);
@@ -84,9 +94,53 @@ export async function loadEmbeddingBundle(
 
     loadedBundleKey = cacheKey;
     loadedBundlePromise = (async () => {
-      const tokenizer = await AutoTokenizer.from_pretrained(EMBEDDING_MODEL_ID);
+      const tokenizer = await AutoTokenizer.from_pretrained(
+        EMBEDDING_MODEL_ID,
+        progressCallback
+          ? {
+              progress_callback: (info: {
+                status?: string;
+                progress?: number;
+                file?: string;
+                name?: string;
+                loaded?: number;
+                total?: number;
+              }) => {
+                progressCallback?.({
+                  status: info.status,
+                  progress: info.progress,
+                  file: info.file,
+                  name: info.name,
+                  loaded: info.loaded,
+                  total: info.total,
+                });
+              },
+            }
+          : undefined,
+      );
       const model = await AutoModel.from_pretrained(EMBEDDING_MODEL_ID, {
         dtype,
+        ...(progressCallback
+          ? {
+              progress_callback: (info: {
+                status?: string;
+                progress?: number;
+                file?: string;
+                name?: string;
+                loaded?: number;
+                total?: number;
+              }) => {
+                progressCallback({
+                  status: info.status,
+                  progress: info.progress,
+                  file: info.file,
+                  name: info.name,
+                  loaded: info.loaded,
+                  total: info.total,
+                });
+              },
+            }
+          : {}),
       });
       return { dtype, tokenizer, model };
     })();
@@ -104,8 +158,13 @@ export async function loadEmbeddingBundle(
     : new Error("Failed to load embedding model");
 }
 
-async function embed(text: string, prefix: string, preferred?: EmbeddingDtype) {
-  const bundle = await loadEmbeddingBundle(preferred);
+async function embed(
+  text: string,
+  prefix: string,
+  preferred?: EmbeddingDtype,
+  progressCallback?: (info: ModelLoadProgressInfo) => void,
+) {
+  const bundle = await loadEmbeddingBundle(preferred, progressCallback);
   const inputs = await bundle.tokenizer([`${prefix}${text}`], {
     padding: true,
     truncation: true,
@@ -123,8 +182,9 @@ async function embed(text: string, prefix: string, preferred?: EmbeddingDtype) {
 export async function embedBookmarkDocument(
   text: string,
   preferred?: EmbeddingDtype,
+  progressCallback?: (info: ModelLoadProgressInfo) => void,
 ) {
-  return embed(text, DOCUMENT_PREFIX, preferred);
+  return embed(text, DOCUMENT_PREFIX, preferred, progressCallback);
 }
 
 export async function embedBookmarkQuery(

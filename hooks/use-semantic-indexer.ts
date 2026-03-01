@@ -5,7 +5,10 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useGeneralStore } from "@/hooks/use-general-store";
-import { useSemanticIndexerStore } from "@/hooks/use-semantic-indexer-store";
+import {
+  useSemanticIndexerStore,
+  type ModelLoadingStage,
+} from "@/hooks/use-semantic-indexer-store";
 import { embedBookmarkDocument } from "@/lib/embedding-client";
 import {
   buildBookmarkEmbeddingText,
@@ -66,6 +69,9 @@ export function useSemanticIndexer() {
     setProcessedCount,
     setTotalCount,
     setErrorCount,
+    setModelLoadingStage,
+    setModelLoadingProgress,
+    setModelLoadingFile,
     resetProgress,
   } = useSemanticIndexerStore();
 
@@ -102,25 +108,63 @@ export function useSemanticIndexer() {
         }
       }
 
-      const { vector, dtype } = await embedBookmarkDocument(
-        text,
-        semanticDtype,
-      );
-      await upsertEmbedding({
-        bookmarkId: bookmark.id as Id<"bookmarks">,
-        embedding: vector,
-        embeddingDim: EMBEDDING_DIM,
-        embeddingModel: EMBEDDING_MODEL_ID,
-        embeddingDtype: dtype,
-        contentHash,
-      });
+      const progressCallback = (info: {
+        status?: string;
+        progress?: number;
+        file?: string;
+      }) => {
+        const stage: ModelLoadingStage =
+          info.status === "initiate" ||
+          info.status === "download" ||
+          info.status === "progress" ||
+          info.status === "loading" ||
+          info.status === "done" ||
+          info.status === "ready"
+            ? info.status === "ready"
+              ? "done"
+              : info.status
+            : "progress";
+        setModelLoadingStage(stage);
+        if (typeof info.progress === "number") {
+          setModelLoadingProgress(info.progress);
+        }
+        if (info.file !== undefined) {
+          setModelLoadingFile(info.file ?? null);
+        }
+      };
 
-      const hashCache = getHashCache();
-      hashCache[bookmark.id] = contentHash;
-      setHashCache(hashCache);
-      return { skipped: false };
+      try {
+        const { vector, dtype } = await embedBookmarkDocument(
+          text,
+          semanticDtype,
+          progressCallback,
+        );
+        await upsertEmbedding({
+          bookmarkId: bookmark.id as Id<"bookmarks">,
+          embedding: vector,
+          embeddingDim: EMBEDDING_DIM,
+          embeddingModel: EMBEDDING_MODEL_ID,
+          embeddingDtype: dtype,
+          contentHash,
+        });
+
+        const hashCache = getHashCache();
+        hashCache[bookmark.id] = contentHash;
+        setHashCache(hashCache);
+        return { skipped: false };
+      } finally {
+        setModelLoadingStage("idle");
+        setModelLoadingProgress(0);
+        setModelLoadingFile(null);
+      }
     },
-    [semanticDtype, upsertEmbedding],
+    [
+      semanticDtype,
+      upsertEmbedding,
+      setModelLoadingStage,
+      setModelLoadingProgress,
+      setModelLoadingFile,
+    ],
   );
 
   const runQueue = useCallback(async () => {
