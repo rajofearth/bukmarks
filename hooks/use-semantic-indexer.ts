@@ -72,6 +72,10 @@ export function useSemanticIndexer() {
     setModelLoadingStage,
     setModelLoadingProgress,
     setModelLoadingFile,
+    setModelLoadingLoaded,
+    setModelLoadingTotal,
+    setModelLoadingSpeedBytesPerSec,
+    setModelLoadingDtype,
     resetProgress,
   } = useSemanticIndexerStore();
 
@@ -80,6 +84,8 @@ export function useSemanticIndexer() {
   const runningRef = useRef(false);
   const pausedRef = useRef(false);
   const semanticEnabledRef = useRef(semanticSearchEnabled);
+  const lastLoadedRef = useRef(0);
+  const lastTimeRef = useRef(0);
 
   useEffect(() => {
     semanticEnabledRef.current = semanticSearchEnabled;
@@ -112,6 +118,8 @@ export function useSemanticIndexer() {
         status?: string;
         progress?: number;
         file?: string;
+        loaded?: number;
+        total?: number;
       }) => {
         const stage: ModelLoadingStage =
           info.status === "initiate" ||
@@ -125,12 +133,38 @@ export function useSemanticIndexer() {
               : info.status
             : "progress";
         setModelLoadingStage(stage);
+        setModelLoadingDtype(semanticDtype);
+
         if (typeof info.progress === "number") {
           setModelLoadingProgress(info.progress);
         }
         if (info.file !== undefined) {
           setModelLoadingFile(info.file ?? null);
         }
+
+        const loaded = info.loaded ?? 0;
+        const total = info.total ?? 0;
+        if (typeof info.loaded === "number") {
+          setModelLoadingLoaded(loaded);
+        }
+        if (typeof info.total === "number" && info.total > 0) {
+          setModelLoadingTotal(total);
+        }
+
+        const now = performance.now() / 1000;
+        if (
+          lastTimeRef.current > 0 &&
+          loaded > lastLoadedRef.current &&
+          now > lastTimeRef.current
+        ) {
+          const elapsed = now - lastTimeRef.current;
+          const delta = loaded - lastLoadedRef.current;
+          if (delta > 0 && elapsed > 0.1) {
+            setModelLoadingSpeedBytesPerSec(delta / elapsed);
+          }
+        }
+        lastLoadedRef.current = loaded;
+        lastTimeRef.current = now;
       };
 
       try {
@@ -156,6 +190,10 @@ export function useSemanticIndexer() {
         setModelLoadingStage("idle");
         setModelLoadingProgress(0);
         setModelLoadingFile(null);
+        setModelLoadingLoaded(0);
+        setModelLoadingTotal(0);
+        setModelLoadingSpeedBytesPerSec(0);
+        setModelLoadingDtype(null);
       }
     },
     [
@@ -164,6 +202,10 @@ export function useSemanticIndexer() {
       setModelLoadingStage,
       setModelLoadingProgress,
       setModelLoadingFile,
+      setModelLoadingLoaded,
+      setModelLoadingTotal,
+      setModelLoadingSpeedBytesPerSec,
+      setModelLoadingDtype,
     ],
   );
 
@@ -182,6 +224,7 @@ export function useSemanticIndexer() {
         break;
       }
       if (pausedRef.current) {
+        runningRef.current = false;
         break;
       }
       const next = queueRef.current.shift();
@@ -199,8 +242,10 @@ export function useSemanticIndexer() {
       await new Promise((resolve) => setTimeout(resolve, 0));
     }
 
-    runningRef.current = false;
-    setRunning(false);
+    if (!pausedRef.current) {
+      runningRef.current = false;
+      setRunning(false);
+    }
   }, [indexBookmark, setRunning, setPaused, setProcessedCount, setErrorCount]);
 
   const startBackfill = useCallback(

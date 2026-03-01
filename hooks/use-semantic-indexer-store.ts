@@ -17,6 +17,10 @@ interface SemanticIndexerState {
   modelLoadingStage: ModelLoadingStage;
   modelLoadingProgress: number;
   modelLoadingFile: string | null;
+  modelLoadingLoaded: number;
+  modelLoadingTotal: number;
+  modelLoadingSpeedBytesPerSec: number;
+  modelLoadingDtype: string | null;
   setRunning: (running: boolean) => void;
   setPaused: (paused: boolean) => void;
   setProcessedCount: (count: number | ((prev: number) => number)) => void;
@@ -25,6 +29,10 @@ interface SemanticIndexerState {
   setModelLoadingStage: (stage: ModelLoadingStage) => void;
   setModelLoadingProgress: (progress: number) => void;
   setModelLoadingFile: (file: string | null) => void;
+  setModelLoadingLoaded: (loaded: number) => void;
+  setModelLoadingTotal: (total: number) => void;
+  setModelLoadingSpeedBytesPerSec: (speed: number) => void;
+  setModelLoadingDtype: (dtype: string | null) => void;
   resetProgress: () => void;
 }
 
@@ -38,6 +46,10 @@ export const useSemanticIndexerStore = create<SemanticIndexerState>()(
     modelLoadingStage: "idle",
     modelLoadingProgress: 0,
     modelLoadingFile: null,
+    modelLoadingLoaded: 0,
+    modelLoadingTotal: 0,
+    modelLoadingSpeedBytesPerSec: 0,
+    modelLoadingDtype: null,
     setRunning: (running) => set({ isRunning: running }),
     setPaused: (paused) => set({ isPaused: paused }),
     setProcessedCount: (count) =>
@@ -55,6 +67,13 @@ export const useSemanticIndexerStore = create<SemanticIndexerState>()(
     setModelLoadingProgress: (modelLoadingProgress) =>
       set({ modelLoadingProgress }),
     setModelLoadingFile: (modelLoadingFile) => set({ modelLoadingFile }),
+    setModelLoadingLoaded: (modelLoadingLoaded) =>
+      set({ modelLoadingLoaded }),
+    setModelLoadingTotal: (modelLoadingTotal) =>
+      set({ modelLoadingTotal }),
+    setModelLoadingSpeedBytesPerSec: (modelLoadingSpeedBytesPerSec) =>
+      set({ modelLoadingSpeedBytesPerSec }),
+    setModelLoadingDtype: (modelLoadingDtype) => set({ modelLoadingDtype }),
     resetProgress: () =>
       set({
         processedCount: 0,
@@ -63,6 +82,10 @@ export const useSemanticIndexerStore = create<SemanticIndexerState>()(
         modelLoadingStage: "idle",
         modelLoadingProgress: 0,
         modelLoadingFile: null,
+        modelLoadingLoaded: 0,
+        modelLoadingTotal: 0,
+        modelLoadingSpeedBytesPerSec: 0,
+        modelLoadingDtype: null,
       }),
   }),
 );

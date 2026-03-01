@@ -53,7 +53,7 @@ import {
   downloadBookmarkFile,
   generateBookmarkHtml,
 } from "@/lib/bookmark-exporter";
-import { cn } from "@/lib/utils";
+import { cn, formatBytes } from "@/lib/utils";
 import { SectionHeader } from "./section-header";
 
 type ExportState = "idle" | "exporting" | "done" | "error";
@@ -108,6 +108,18 @@ export function DataSettings() {
   );
   const modelLoadingFile = useSemanticIndexerStore(
     (state) => state.modelLoadingFile,
+  );
+  const modelLoadingLoaded = useSemanticIndexerStore(
+    (state) => state.modelLoadingLoaded,
+  );
+  const modelLoadingTotal = useSemanticIndexerStore(
+    (state) => state.modelLoadingTotal,
+  );
+  const modelLoadingSpeedBytesPerSec = useSemanticIndexerStore(
+    (state) => state.modelLoadingSpeedBytesPerSec,
+  );
+  const modelLoadingDtype = useSemanticIndexerStore(
+    (state) => state.modelLoadingDtype,
   );
 
   // ── Export handler ───────────────────────────────────────────
@@ -436,40 +448,98 @@ export function DataSettings() {
                 </div>
               </div>
 
-              {isRunning && (
+              {isRunning && !isPaused && (
                 <div className="space-y-2">
-                  {modelLoadingStage !== "idle" && modelLoadingStage !== "done" ? (
+                  {modelLoadingStage !== "idle" &&
+                  modelLoadingStage !== "done" ? (
                     <>
                       <div className="flex items-center justify-between gap-1.5 text-xs text-muted-foreground">
-                        {modelLoadingProgress === 0 && (
+                        {modelLoadingProgress === 0 &&
+                        !(modelLoadingLoaded > 0 && modelLoadingTotal > 0) ? (
                           <Loader2 className="size-3.5 shrink-0 animate-spin" />
-                        )}
-                        <span>
+                        ) : null}
+                        <span className="min-w-0 flex-1">
                           {modelLoadingStage === "initiate"
                             ? "Preparing model..."
                             : modelLoadingStage === "download" ||
                                 modelLoadingStage === "progress"
-                              ? `Downloading model${
-                                  modelLoadingFile
-                                    ? ` ${modelLoadingFile}`
+                              ? `Downloading ${modelLoadingFile ?? "model"}${
+                                  modelLoadingDtype
+                                    ? ` (${modelLoadingDtype})`
                                     : ""
                                 }...`
-                              : "Loading model..."}
+                              : "Loading model into memory..."}
                         </span>
-                        {modelLoadingProgress > 0 && (
-                          <span>{modelProgressRounded}%</span>
+                        {(modelLoadingProgress > 0 ||
+                          (modelLoadingLoaded > 0 &&
+                            modelLoadingTotal > 0)) && (
+                          <span className="shrink-0 tabular-nums">
+                            {modelLoadingProgress > 0
+                              ? `${modelProgressRounded}%`
+                              : `${Math.round(
+                                  (modelLoadingLoaded / modelLoadingTotal) *
+                                    100,
+                                )}%`}
+                          </span>
                         )}
                       </div>
-                      <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
-                        <motion.div
-                          className="h-full rounded-full bg-foreground/70"
-                          initial={{ width: 0 }}
-                          animate={{
-                            width: `${modelLoadingProgress}%`,
-                          }}
-                          transition={{ duration: 0.2, ease: "easeOut" }}
-                        />
-                      </div>
+                      {(modelLoadingLoaded > 0 && modelLoadingTotal > 0) ||
+                      modelLoadingProgress > 0 ? (
+                        <div className="space-y-1">
+                          {(modelLoadingLoaded > 0 ||
+                            modelLoadingTotal > 0) && (
+                            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                              <span>
+                                {formatBytes(modelLoadingLoaded)} /{" "}
+                                {formatBytes(modelLoadingTotal)}
+                              </span>
+                              {modelLoadingSpeedBytesPerSec > 0 && (
+                                <span className="tabular-nums">
+                                  · {formatBytes(modelLoadingSpeedBytesPerSec)}
+                                  /s
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+                            <motion.div
+                              className="h-full rounded-full bg-foreground/70"
+                              initial={{ width: 0 }}
+                              animate={{
+                                width: `${
+                                  modelLoadingProgress > 0
+                                    ? modelLoadingProgress
+                                    : modelLoadingTotal > 0
+                                      ? (modelLoadingLoaded /
+                                          modelLoadingTotal) *
+                                        100
+                                      : 0
+                                }%`,
+                              }}
+                              transition={{
+                                duration: 0.3,
+                                ease: "easeOut",
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        modelLoadingStage === "loading" && (
+                          <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+                            <motion.div
+                              className="h-full rounded-full bg-foreground/70"
+                              animate={{
+                                width: ["30%", "70%", "30%"],
+                              }}
+                              transition={{
+                                duration: 1.2,
+                                repeat: Infinity,
+                                ease: "easeInOut",
+                              }}
+                            />
+                          </div>
+                        )
+                      )}
                     </>
                   ) : (
                     <>
@@ -477,14 +547,17 @@ export function DataSettings() {
                         <span>
                           Indexing {processedCount} / {totalCount}
                         </span>
-                        <span>{indexProgress}%</span>
+                        <span className="tabular-nums">{indexProgress}%</span>
                       </div>
                       <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
                         <motion.div
                           className="h-full rounded-full bg-foreground/70"
                           initial={{ width: 0 }}
                           animate={{ width: `${indexProgress}%` }}
-                          transition={{ duration: 0.2, ease: "easeOut" }}
+                          transition={{
+                            duration: 0.3,
+                            ease: "easeOut",
+                          }}
                         />
                       </div>
                     </>
