@@ -541,6 +541,43 @@ export const getBookmarkEmbeddingHash = query({
   },
 });
 
+async function computeEmbeddingStatsFromSource(
+  ctx: Pick<QueryCtx, "db">,
+  userId: string,
+) {
+  const [bookmarks, embeddings] = await Promise.all([
+    ctx.db
+      .query("bookmarks")
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
+      .collect(),
+    ctx.db
+      .query("bookmarkEmbeddings")
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
+      .collect(),
+  ]);
+  const totalBookmarks = bookmarks.length;
+  const indexedBookmarks = embeddings.length;
+  const embeddingByBookmark = new Map(
+    embeddings.map((e) => [e.bookmarkId, e] as const),
+  );
+  let staleBookmarks = 0;
+  for (const bookmark of bookmarks) {
+    const embedding = embeddingByBookmark.get(bookmark._id);
+    if (embedding && isEmbeddingStaleForBookmark(bookmark, embedding)) {
+      staleBookmarks += 1;
+    }
+  }
+  const lastIndexedAt = embeddings.length > 0
+    ? Math.max(...embeddings.map((e) => e.updatedAt))
+    : null;
+  return {
+    totalBookmarks,
+    indexedBookmarks,
+    staleBookmarks,
+    lastIndexedAt,
+  };
+}
+
 export const getEmbeddingIndexStats = query({
   args: {},
   handler: async (ctx) => {
@@ -555,10 +592,23 @@ export const getEmbeddingIndexStats = query({
       };
     }
     const stats = await getEmbeddingIndexStatsState(ctx, user._id);
-    const totalBookmarks = stats?.totalBookmarks ?? 0;
-    const indexedBookmarks = stats?.indexedBookmarks ?? 0;
-    const staleBookmarks = stats?.staleBookmarks ?? 0;
-    const lastIndexedAt = stats?.lastIndexedAt ?? null;
+    const totalBookmarks: number;
+    const indexedBookmarks: number;
+    const staleBookmarks: number;
+    const lastIndexedAt: number | null;
+
+    if (stats) {
+      totalBookmarks = stats.totalBookmarks;
+      indexedBookmarks = stats.indexedBookmarks;
+      staleBookmarks = stats.staleBookmarks;
+      lastIndexedAt = stats.lastIndexedAt;
+    } else {
+      const computed = await computeEmbeddingStatsFromSource(ctx, user._id);
+      totalBookmarks = computed.totalBookmarks;
+      indexedBookmarks = computed.indexedBookmarks;
+      staleBookmarks = computed.staleBookmarks;
+      lastIndexedAt = computed.lastIndexedAt;
+    }
 
     return {
       totalBookmarks,
