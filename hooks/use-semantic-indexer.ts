@@ -223,8 +223,10 @@ export function useSemanticIndexer() {
     setError(null);
 
     // ── Phase 1: Load model ONCE ────────────────────────────────────
+    // Don't eagerly set "initiate" — let progress callbacks drive stage.
+    // If model is already in memory, no callbacks fire → modelReady is
+    // set immediately and UI skips straight to indexing.
     resetModelState();
-    setModelLoadingStage("initiate");
 
     try {
       const progressCb = createModelProgressCallback();

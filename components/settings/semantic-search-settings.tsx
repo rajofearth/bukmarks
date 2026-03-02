@@ -59,11 +59,9 @@ function ProgressBar({
                     style={{ width: "40%" }}
                 />
             ) : (
-                <motion.div
-                    className="h-full rounded-full bg-foreground/60"
-                    initial={{ width: "0%" }}
-                    animate={{ width: `${value}%` }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
+                <div
+                    className="h-full rounded-full bg-foreground/60 transition-[width] duration-300 ease-out"
+                    style={{ width: `${value}%` }}
                 />
             )}
         </div>
@@ -358,9 +356,14 @@ export function SemanticSearchSettings() {
     const error = useSemanticIndexerStore((s) => s.error);
 
     // ── Derive phase — pure computation, no state machine ─────────────
+    // Only show "model" phase when there's actual loading activity.
+    // If model resolves from memory cache, modelLoadingStage stays "idle"
+    // and we skip straight to indexing.
+    const isModelLoading = isRunning && !modelReady &&
+        modelLoadingStage !== "idle" && modelLoadingStage !== "done";
     const phase: Phase =
         error ? "error"
-            : isRunning && !modelReady ? "model"
+            : isModelLoading ? "model"
                 : isRunning && processedCount < totalCount ? "indexing"
                     : isRunning && processedCount >= totalCount && totalCount > 0 ? "done"
                         : "idle";
