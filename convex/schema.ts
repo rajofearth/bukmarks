@@ -50,12 +50,21 @@ export default defineSchema({
   })
     .index("by_user_id", ["userId"])
     .index("by_bookmark_id", ["bookmarkId"])
+    .index("by_user_updated_at", ["userId", "updatedAt"])
     .index("by_user_bookmark", ["userId", "bookmarkId"])
     .vectorIndex("by_embedding", {
       vectorField: "embedding",
       dimensions: 256,
       filterFields: ["userId", "folderId"],
     }),
+
+  embeddingIndexStats: defineTable({
+    userId: v.string(),
+    totalBookmarks: v.number(),
+    indexedBookmarks: v.number(),
+    staleBookmarks: v.number(),
+    lastIndexedAt: v.union(v.number(), v.null()),
+  }).index("by_user_id", ["userId"]),
 
   folders: defineTable({
     userId: v.string(), // Owner (Auth User ID)

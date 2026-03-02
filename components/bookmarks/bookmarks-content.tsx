@@ -4,17 +4,16 @@ import { AnimatePresence, motion } from "framer-motion";
 import { BookmarkIcon, Loader2 } from "lucide-react";
 import { FlipReveal } from "@/components/gsap/flip-reveal";
 import { ImportGuide } from "@/components/onboarding/import-guide";
-import { useGeneralStore } from "@/hooks/use-general-store";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { ViewMode } from "@/hooks/use-general-store";
+import { useGeneralStore } from "@/hooks/use-general-store";
 import { getViewModeGridClasses } from "@/lib/bookmarks-utils";
 import { cn } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
 import { BookmarkCard } from "./bookmark-card";
 import { DetailsHeaderRow } from "./bookmarks-empty-details";
+import type { SearchMode, SemanticStage } from "./search-types";
 import type { Bookmark, Folder } from "./types";
 
-type SearchMode = "lexical" | "semantic";
-type SemanticStage = "idle" | "embedding" | "vectorSearch" | "rerank" | "error";
 const SKELETON_KEYS = [
   "skeleton-1",
   "skeleton-2",
@@ -103,7 +102,8 @@ export function BookmarksContent({
   const shouldAnimateList =
     !isSemanticLoading && searchQuery.trim().length === 0;
   const trimmedQuery = searchQuery.trim();
-  const showSemanticStatus = trimmedQuery.length > 0 && searchMode === "semantic";
+  const showSemanticStatus =
+    trimmedQuery.length > 0 && searchMode === "semantic";
   const showSkeletonGrid = isSemanticLoading && filteredBookmarks.length === 0;
   const isSemanticNoResults =
     showSemanticStatus && !isSemanticLoading && filteredBookmarks.length === 0;
@@ -123,8 +123,14 @@ export function BookmarksContent({
   return (
     <div className="relative h-full">
       {showSemanticStatus ? (
-        <div className="mb-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-          {isSemanticLoading ? <Loader2 className="size-3.5 animate-spin" /> : null}
+        <div
+          className="mb-3 flex items-center gap-1.5 text-xs text-muted-foreground"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {isSemanticLoading ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : null}
           <span>
             {isSemanticLoading
               ? semanticStageText(semanticStage)

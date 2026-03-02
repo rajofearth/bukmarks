@@ -1,13 +1,17 @@
 "use client";
 
-import { ChevronRightIcon, FolderIcon, Loader2, SearchIcon } from "lucide-react";
-import { useEffect, useState, type ElementType, type ReactNode } from "react";
+import {
+  ChevronRightIcon,
+  FolderIcon,
+  Loader2,
+  SearchIcon,
+} from "lucide-react";
+import { type ElementType, type ReactNode, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { DisplayControlsMenu } from "./display-controls-menu";
-
-type SearchMode = "lexical" | "semantic";
+import type { SearchMode } from "./search-types";
 
 function useDebouncedSearch(
   searchQuery: string,
@@ -45,6 +49,7 @@ function SearchModePill({
       <button
         type="button"
         onClick={() => onSearchModeChange("lexical")}
+        aria-pressed={searchMode === "lexical"}
         className={cn(
           "h-6 rounded-sm px-2 text-[11px] transition-colors",
           searchMode === "lexical"
@@ -57,6 +62,7 @@ function SearchModePill({
       <button
         type="button"
         onClick={() => onSearchModeChange("semantic")}
+        aria-pressed={searchMode === "semantic"}
         className={cn(
           "h-6 rounded-sm px-2 text-[11px] transition-colors",
           searchMode === "semantic"

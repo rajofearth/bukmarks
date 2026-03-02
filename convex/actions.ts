@@ -3,11 +3,11 @@
 import * as cheerio from "cheerio";
 import { makeFunctionReference } from "convex/server";
 import { v } from "convex/values";
+import { EMBEDDING_DIM } from "../lib/semantic-search";
 import type { Doc, Id } from "./_generated/dataModel";
 import { action } from "./_generated/server";
 import { authComponent } from "./auth";
 
-const EMBEDDING_DIM = 256;
 const fetchBookmarkEmbeddingsByIdsRef = makeFunctionReference<
   "query",
   { ids: Id<"bookmarkEmbeddings">[] },

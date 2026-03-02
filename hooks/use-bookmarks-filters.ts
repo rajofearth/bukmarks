@@ -1,13 +1,14 @@
 "use client";
 
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  startTransition,
-} from "react";
+import { useAction } from "convex/react";
+import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+import type {
+  SearchMode,
+  SemanticStage,
+} from "@/components/bookmarks/search-types";
 import type { Bookmark, FolderViewItem } from "@/components/bookmarks/types";
+import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import {
   filterBookmarksBySearch,
   filterFoldersBySearch,
@@ -18,9 +19,6 @@ import {
   warmupEmbeddingModel,
 } from "@/lib/embedding-client";
 import type { SortMode } from "./use-general-store";
-import { useAction } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
 import { useGeneralStore } from "./use-general-store";
 
 interface UseBookmarksFiltersArgs {
@@ -30,10 +28,8 @@ interface UseBookmarksFiltersArgs {
   searchQuery: string;
   sortMode: SortMode;
   isMobile: boolean;
-  searchModeOverride?: "lexical" | "semantic" | false | null;
+  searchModeOverride?: SearchMode | false | null;
 }
-
-type SemanticStage = "idle" | "embedding" | "vectorSearch" | "rerank" | "error";
 
 export function useBookmarksFilters({
   bookmarks,
@@ -52,7 +48,7 @@ export function useBookmarksFilters({
     searchModeOverride === undefined || searchModeOverride === null
       ? "semantic"
       : searchModeOverride;
-  const activeSearchMode: "lexical" | "semantic" =
+  const activeSearchMode: SearchMode =
     semanticSearchEnabled && resolvedSearchModeOverride === "semantic"
       ? "semantic"
       : "lexical";
@@ -268,6 +264,7 @@ export function useBookmarksFilters({
   const filteredBookmarks = useMemo(() => {
     if (
       !debouncedLexicalQuery.trim() ||
+      !debouncedSemanticQuery.trim() ||
       !semanticIds ||
       semanticIds.length === 0
     ) {
@@ -289,6 +286,7 @@ export function useBookmarksFilters({
     folderFilteredBookmarks,
     lexicalFilteredBookmarks,
     debouncedLexicalQuery,
+    debouncedSemanticQuery,
     semanticIds,
   ]);
 

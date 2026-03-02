@@ -1,29 +1,145 @@
 import { v } from "convex/values";
+import {
+  buildBookmarkEmbeddingText,
+  EMBEDDING_DIM,
+  EMBEDDING_MODEL_ID,
+  hashSemanticText,
+} from "../lib/semantic-search";
 import type { Doc, Id } from "./_generated/dataModel";
-import { mutation, query } from "./_generated/server";
+import {
+  type MutationCtx,
+  mutation,
+  type QueryCtx,
+  query,
+} from "./_generated/server";
 import { authComponent, getOptionalAuthUser } from "./auth";
 
-const EMBEDDING_DIM = 256;
-const EMBEDDING_MODEL = "onnx-community/embeddinggemma-300m-ONNX";
+type EmbeddingIndexStatsState = {
+  id: Id<"embeddingIndexStats">;
+  totalBookmarks: number;
+  indexedBookmarks: number;
+  staleBookmarks: number;
+  lastIndexedAt: number | null;
+};
 
-function buildBookmarkSemanticText(bookmark: {
-  title: string;
-  url: string;
-  description?: string;
-}) {
-  const normalizedDescription = bookmark.description?.trim();
-  return [bookmark.title.trim(), bookmark.url.trim(), normalizedDescription]
-    .filter(Boolean)
-    .join("\n");
+function clampNonNegative(value: number) {
+  return value < 0 ? 0 : value;
 }
 
-function hashBookmarkText(text: string) {
-  let hash = 2166136261;
-  for (let i = 0; i < text.length; i += 1) {
-    hash ^= text.charCodeAt(i);
-    hash = Math.imul(hash, 16777619);
+function getBookmarkContentHash(bookmark: {
+  title: string;
+  url: string;
+  description?: string | null;
+}) {
+  return hashSemanticText(buildBookmarkEmbeddingText(bookmark));
+}
+
+function isEmbeddingStaleForBookmark(
+  bookmark: {
+    title: string;
+    url: string;
+    description?: string | null;
+  },
+  embedding: { contentHash: string },
+) {
+  return embedding.contentHash !== getBookmarkContentHash(bookmark);
+}
+
+async function getEmbeddingIndexStatsState(
+  ctx: Pick<QueryCtx, "db">,
+  userId: string,
+): Promise<EmbeddingIndexStatsState | null> {
+  const stats = await ctx.db
+    .query("embeddingIndexStats")
+    .withIndex("by_user_id", (q) => q.eq("userId", userId))
+    .first();
+  if (!stats) {
+    return null;
   }
-  return `fnv1a_${(hash >>> 0).toString(16)}`;
+  return {
+    id: stats._id,
+    totalBookmarks: stats.totalBookmarks,
+    indexedBookmarks: stats.indexedBookmarks,
+    staleBookmarks: stats.staleBookmarks,
+    lastIndexedAt: stats.lastIndexedAt,
+  };
+}
+
+async function ensureEmbeddingIndexStatsState(
+  ctx: Pick<MutationCtx, "db">,
+  userId: string,
+): Promise<EmbeddingIndexStatsState> {
+  const existing = await getEmbeddingIndexStatsState(ctx, userId);
+  if (existing) {
+    return existing;
+  }
+  const id = await ctx.db.insert("embeddingIndexStats", {
+    userId,
+    totalBookmarks: 0,
+    indexedBookmarks: 0,
+    staleBookmarks: 0,
+    lastIndexedAt: null,
+  });
+  return {
+    id,
+    totalBookmarks: 0,
+    indexedBookmarks: 0,
+    staleBookmarks: 0,
+    lastIndexedAt: null,
+  };
+}
+
+async function getLatestEmbeddingUpdatedAt(
+  ctx: Pick<QueryCtx, "db">,
+  userId: string,
+) {
+  const latestEmbedding = await ctx.db
+    .query("bookmarkEmbeddings")
+    .withIndex("by_user_updated_at", (q) => q.eq("userId", userId))
+    .order("desc")
+    .first();
+  return latestEmbedding?.updatedAt ?? null;
+}
+
+async function applyEmbeddingIndexStatsDelta(
+  ctx: Pick<MutationCtx, "db">,
+  userId: string,
+  delta: {
+    totalBookmarks?: number;
+    indexedBookmarks?: number;
+    staleBookmarks?: number;
+    maxLastIndexedAt?: number;
+    recomputeLastIndexedAt?: boolean;
+  },
+) {
+  const stats = await ensureEmbeddingIndexStatsState(ctx, userId);
+  const nextTotal = clampNonNegative(
+    stats.totalBookmarks + (delta.totalBookmarks ?? 0),
+  );
+  const nextIndexed = clampNonNegative(
+    stats.indexedBookmarks + (delta.indexedBookmarks ?? 0),
+  );
+  const staleCandidate = clampNonNegative(
+    stats.staleBookmarks + (delta.staleBookmarks ?? 0),
+  );
+  let nextLastIndexedAt = stats.lastIndexedAt;
+
+  if (delta.maxLastIndexedAt !== undefined) {
+    nextLastIndexedAt =
+      nextLastIndexedAt === null
+        ? delta.maxLastIndexedAt
+        : Math.max(nextLastIndexedAt, delta.maxLastIndexedAt);
+  }
+  if (delta.recomputeLastIndexedAt) {
+    nextLastIndexedAt = await getLatestEmbeddingUpdatedAt(ctx, userId);
+  }
+
+  await ctx.db.patch(stats.id, {
+    totalBookmarks: nextTotal,
+    indexedBookmarks: nextIndexed,
+    staleBookmarks: Math.min(staleCandidate, nextIndexed),
+    lastIndexedAt: nextLastIndexedAt,
+  });
 }
 
 // --- Folders ---
@@ -117,6 +233,9 @@ export const deleteFolder = mutation({
       .withIndex("by_user_id", (q) => q.eq("userId", user._id))
       .filter((q) => q.eq(q.field("folderId"), args.folderId))
       .collect();
+    let removedBookmarks = 0;
+    let removedEmbeddings = 0;
+    let removedStale = 0;
     for (const bm of childBookmarks) {
       const embedding = await ctx.db
         .query("bookmarkEmbeddings")
@@ -125,9 +244,22 @@ export const deleteFolder = mutation({
         )
         .unique();
       if (embedding) {
+        if (isEmbeddingStaleForBookmark(bm, embedding)) {
+          removedStale += 1;
+        }
         await ctx.db.delete(embedding._id);
+        removedEmbeddings += 1;
       }
       await ctx.db.delete(bm._id);
+      removedBookmarks += 1;
+    }
+    if (removedBookmarks > 0 || removedEmbeddings > 0 || removedStale > 0) {
+      await applyEmbeddingIndexStatsDelta(ctx, user._id, {
+        totalBookmarks: -removedBookmarks,
+        indexedBookmarks: -removedEmbeddings,
+        staleBookmarks: -removedStale,
+        recomputeLastIndexedAt: removedEmbeddings > 0,
+      });
     }
 
     // Cascading delete: remove child folders recursively
@@ -188,6 +320,7 @@ export const createBookmark = mutation({
       createdAt: args.addDate ?? Date.now(),
       metadataStatus: args.favicon && args.ogImage ? "completed" : "pending",
     });
+    await applyEmbeddingIndexStatsDelta(ctx, user._id, { totalBookmarks: 1 });
     return bookmarkId;
   },
 });
@@ -214,6 +347,7 @@ export const batchCreateBookmarks = mutation({
 
     const createdIds: Id<"bookmarks">[] = [];
     let movedCount = 0;
+    let newBookmarksCount = 0;
     for (const bookmark of args.bookmarks) {
       // Check for duplicate
       const existing = await ctx.db
@@ -249,6 +383,12 @@ export const batchCreateBookmarks = mutation({
           bookmark.favicon && bookmark.ogImage ? "completed" : "pending",
       });
       createdIds.push(bookmarkId);
+      newBookmarksCount += 1;
+    }
+    if (newBookmarksCount > 0) {
+      await applyEmbeddingIndexStatsDelta(ctx, user._id, {
+        totalBookmarks: newBookmarksCount,
+      });
     }
     return { createdIds, movedCount };
   },
@@ -294,7 +434,7 @@ export const upsertBookmarkEmbedding = mutation({
     ) {
       throw new Error("Invalid embedding dimensions");
     }
-    if (args.embeddingModel !== EMBEDDING_MODEL) {
+    if (args.embeddingModel !== EMBEDDING_MODEL_ID) {
       throw new Error("Unsupported embedding model");
     }
 
@@ -303,27 +443,40 @@ export const upsertBookmarkEmbedding = mutation({
       throw new Error("Bookmark not found or unauthorized");
     }
 
+    const serverComputedContentHash = getBookmarkContentHash(bookmark);
+    if (args.contentHash !== serverComputedContentHash) {
+      console.warn("Client contentHash mismatch", {
+        bookmarkId: args.bookmarkId,
+      });
+    }
+
     const existing = await ctx.db
       .query("bookmarkEmbeddings")
       .withIndex("by_user_bookmark", (q) =>
         q.eq("userId", user._id).eq("bookmarkId", args.bookmarkId),
       )
       .unique();
+    const updatedAt = Date.now();
 
     if (existing) {
+      const wasStale = isEmbeddingStaleForBookmark(bookmark, existing);
       await ctx.db.patch(existing._id, {
         folderId: bookmark.folderId,
         embedding: args.embedding,
         embeddingDim: args.embeddingDim,
         embeddingModel: args.embeddingModel,
         embeddingDtype: args.embeddingDtype,
-        contentHash: args.contentHash,
-        updatedAt: Date.now(),
+        contentHash: serverComputedContentHash,
+        updatedAt,
+      });
+      await applyEmbeddingIndexStatsDelta(ctx, user._id, {
+        staleBookmarks: wasStale ? -1 : 0,
+        maxLastIndexedAt: updatedAt,
       });
       return existing._id;
     }
 
-    return await ctx.db.insert("bookmarkEmbeddings", {
+    const insertedId = await ctx.db.insert("bookmarkEmbeddings", {
       userId: user._id,
       bookmarkId: args.bookmarkId,
       folderId: bookmark.folderId,
@@ -331,9 +484,14 @@ export const upsertBookmarkEmbedding = mutation({
       embeddingDim: args.embeddingDim,
       embeddingModel: args.embeddingModel,
       embeddingDtype: args.embeddingDtype,
-      contentHash: args.contentHash,
-      updatedAt: Date.now(),
+      contentHash: serverComputedContentHash,
+      updatedAt,
     });
+    await applyEmbeddingIndexStatsDelta(ctx, user._id, {
+      indexedBookmarks: 1,
+      maxLastIndexedAt: updatedAt,
+    });
+    return insertedId;
   },
 });
 
@@ -351,7 +509,17 @@ export const deleteBookmarkEmbedding = mutation({
       )
       .unique();
     if (embedding) {
+      const bookmark = await ctx.db.get(args.bookmarkId);
+      const wasStale =
+        bookmark && bookmark.userId === user._id
+          ? isEmbeddingStaleForBookmark(bookmark, embedding)
+          : false;
       await ctx.db.delete(embedding._id);
+      await applyEmbeddingIndexStatsDelta(ctx, user._id, {
+        indexedBookmarks: -1,
+        staleBookmarks: wasStale ? -1 : 0,
+        recomputeLastIndexedAt: true,
+      });
     }
   },
 });
@@ -386,60 +554,11 @@ export const getEmbeddingIndexStats = query({
         lastIndexedAt: null as number | null,
       };
     }
-
-    const bookmarkHashesById = new Map<Id<"bookmarks">, string>();
-    let totalBookmarks = 0;
-    let bookmarkCursor: string | null = null;
-
-    while (true) {
-      const bookmarkPage = await ctx.db
-        .query("bookmarks")
-        .withIndex("by_user_id", (q) => q.eq("userId", user._id))
-        .paginate({
-          cursor: bookmarkCursor,
-          numItems: 256,
-        });
-      for (const bookmark of bookmarkPage.page) {
-        totalBookmarks += 1;
-        bookmarkHashesById.set(
-          bookmark._id,
-          hashBookmarkText(buildBookmarkSemanticText(bookmark)),
-        );
-      }
-      if (bookmarkPage.isDone) {
-        break;
-      }
-      bookmarkCursor = bookmarkPage.continueCursor;
-    }
-
-    let indexedBookmarks = 0;
-    let staleBookmarks = 0;
-    let lastIndexedAt: number | null = null;
-    let embeddingCursor: string | null = null;
-
-    while (true) {
-      const embeddingPage = await ctx.db
-        .query("bookmarkEmbeddings")
-        .withIndex("by_user_id", (q) => q.eq("userId", user._id))
-        .paginate({
-          cursor: embeddingCursor,
-          numItems: 256,
-        });
-      for (const embedding of embeddingPage.page) {
-        indexedBookmarks += 1;
-        if (lastIndexedAt === null || embedding.updatedAt > lastIndexedAt) {
-          lastIndexedAt = embedding.updatedAt;
-        }
-        const currentHash = bookmarkHashesById.get(embedding.bookmarkId);
-        if (currentHash && embedding.contentHash !== currentHash) {
-          staleBookmarks += 1;
-        }
-      }
-      if (embeddingPage.isDone) {
-        break;
-      }
-      embeddingCursor = embeddingPage.continueCursor;
-    }
+    const stats = await getEmbeddingIndexStatsState(ctx, user._id);
+    const totalBookmarks = stats?.totalBookmarks ?? 0;
+    const indexedBookmarks = stats?.indexedBookmarks ?? 0;
+    const staleBookmarks = stats?.staleBookmarks ?? 0;
+    const lastIndexedAt = stats?.lastIndexedAt ?? null;
 
     return {
       totalBookmarks,
@@ -484,12 +603,38 @@ export const updateBookmarkMetadata = mutation({
     const resolvedStatus =
       args.metadataStatus ??
       (hasNewData ? "completed" : bookmark.metadataStatus);
+    const nextTitle = args.title ?? bookmark.title;
+    const nextDescription = bookmark.description;
+    const nextUrl = bookmark.url;
+    const embedding = await ctx.db
+      .query("bookmarkEmbeddings")
+      .withIndex("by_user_bookmark", (q) =>
+        q.eq("userId", user._id).eq("bookmarkId", args.bookmarkId),
+      )
+      .unique();
+    const staleDelta = embedding
+      ? Number(
+          isEmbeddingStaleForBookmark(
+            {
+              title: nextTitle,
+              url: nextUrl,
+              description: nextDescription,
+            },
+            embedding,
+          ),
+        ) - Number(isEmbeddingStaleForBookmark(bookmark, embedding))
+      : 0;
     await ctx.db.patch(args.bookmarkId, {
       favicon: args.favicon ?? bookmark.favicon,
       ogImage: args.ogImage ?? bookmark.ogImage,
-      title: args.title ?? bookmark.title,
+      title: nextTitle,
       metadataStatus: resolvedStatus,
     });
+    if (staleDelta !== 0) {
+      await applyEmbeddingIndexStatsDelta(ctx, user._id, {
+        staleBookmarks: staleDelta,
+      });
+    }
   },
 });
 
@@ -520,19 +665,32 @@ export const updateBookmark = mutation({
     const patch = Object.fromEntries(
       Object.entries(rest).filter(([, value]) => value !== undefined),
     ) as Record<string, unknown>;
+    const embedding = await ctx.db
+      .query("bookmarkEmbeddings")
+      .withIndex("by_user_bookmark", (q) =>
+        q.eq("userId", user._id).eq("bookmarkId", bookmarkId),
+      )
+      .unique();
+    const nextBookmark = {
+      ...bookmark,
+      title: args.title ?? bookmark.title,
+      url: args.url ?? bookmark.url,
+      description: args.description ?? bookmark.description,
+    };
+    const staleDelta = embedding
+      ? Number(isEmbeddingStaleForBookmark(nextBookmark, embedding)) -
+        Number(isEmbeddingStaleForBookmark(bookmark, embedding))
+      : 0;
 
     await ctx.db.patch(bookmarkId, patch);
+    if (staleDelta !== 0) {
+      await applyEmbeddingIndexStatsDelta(ctx, user._id, {
+        staleBookmarks: staleDelta,
+      });
+    }
 
-    if (args.folderId !== undefined) {
-      const embedding = await ctx.db
-        .query("bookmarkEmbeddings")
-        .withIndex("by_user_bookmark", (q) =>
-          q.eq("userId", user._id).eq("bookmarkId", bookmarkId),
-        )
-        .unique();
-      if (embedding) {
-        await ctx.db.patch(embedding._id, { folderId: args.folderId });
-      }
+    if (args.folderId !== undefined && embedding) {
+      await ctx.db.patch(embedding._id, { folderId: args.folderId });
     }
   },
 });
@@ -558,10 +716,20 @@ export const deleteBookmark = mutation({
         q.eq("userId", user._id).eq("bookmarkId", args.bookmarkId),
       )
       .unique();
+    const wasStale =
+      embedding !== null
+        ? isEmbeddingStaleForBookmark(bookmark, embedding)
+        : false;
     if (embedding) {
       await ctx.db.delete(embedding._id);
     }
     await ctx.db.delete(args.bookmarkId);
+    await applyEmbeddingIndexStatsDelta(ctx, user._id, {
+      totalBookmarks: -1,
+      indexedBookmarks: embedding ? -1 : 0,
+      staleBookmarks: wasStale ? -1 : 0,
+      recomputeLastIndexedAt: embedding !== null,
+    });
   },
 });
 
@@ -573,7 +741,7 @@ export const deleteAllData = mutation({
       throw new Error("Not authenticated");
     }
 
-    const [bookmarks, folders, embeddings] = await Promise.all([
+    const [bookmarks, folders, embeddings, indexStats] = await Promise.all([
       ctx.db
         .query("bookmarks")
         .withIndex("by_user_id", (q) => q.eq("userId", user._id))
@@ -586,6 +754,10 @@ export const deleteAllData = mutation({
         .query("bookmarkEmbeddings")
         .withIndex("by_user_id", (q) => q.eq("userId", user._id))
         .collect(),
+      ctx.db
+        .query("embeddingIndexStats")
+        .withIndex("by_user_id", (q) => q.eq("userId", user._id))
+        .collect(),
     ]);
 
     for (const bookmark of bookmarks) {
@@ -596,6 +768,9 @@ export const deleteAllData = mutation({
     }
     for (const folder of folders) {
       await ctx.db.delete(folder._id);
+    }
+    for (const stats of indexStats) {
+      await ctx.db.delete(stats._id);
     }
 
     return {

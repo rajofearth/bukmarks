@@ -37,6 +37,7 @@ import { FoldersSidebar } from "./folders-sidebar";
 import { MetadataFetcher } from "./metadata-fetcher";
 import { MobileLayout } from "./mobile-layout";
 import { ProfileTab } from "./profile-tab";
+import type { SearchMode } from "./search-types";
 import type { Bookmark, DragData } from "./types";
 
 const AddBookmarkDialog = dynamic(
@@ -71,9 +72,8 @@ export function BookmarksPage() {
     "home",
   );
   const [showMobileSearch, setShowMobileSearch] = useState(false);
-  const [searchModeOverride, setSearchModeOverride] = useState<
-    "lexical" | "semantic"
-  >("semantic");
+  const [searchModeOverride, setSearchModeOverride] =
+    useState<SearchMode>("semantic");
   const hasShownSemanticWarningRef = useRef(false);
   const { viewMode, sortMode } = useGeneralStore();
   const {
@@ -120,7 +120,7 @@ export function BookmarksPage() {
   }, [semanticSearchEnabled]);
 
   const handleSearchModeChange = useCallback(
-    (mode: "lexical" | "semantic") => {
+    (mode: SearchMode) => {
       if (!semanticSearchEnabled) {
         return;
       }

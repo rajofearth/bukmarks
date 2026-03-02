@@ -40,7 +40,7 @@ const QUERY_CACHE_LIMIT = 64;
 const queryEmbeddingCache = new Map<string, QueryEmbeddingCacheEntry>();
 
 function normalizeCacheKey(text: string, dtype?: EmbeddingDtype) {
-  return `${dtype ?? "auto"}::${text.trim().toLowerCase()}`;
+  return `${dtype ?? "auto"}::${text.trim()}`;
 }
 
 function touchCacheEntry(key: string, value: QueryEmbeddingCacheEntry) {
