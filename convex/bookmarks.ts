@@ -22,6 +22,8 @@ type EmbeddingIndexStatsState = {
   lastIndexedAt: number | null;
 };
 
+const MAX_IDS_BATCH = 100;
+
 function clampNonNegative(value: number) {
   return value < 0 ? 0 : value;
 }
@@ -784,6 +786,9 @@ export const deleteAllData = mutation({
 export const fetchBookmarkEmbeddingsByIds = query({
   args: { ids: v.array(v.id("bookmarkEmbeddings")) },
   handler: async (ctx, args) => {
+    if (args.ids.length > MAX_IDS_BATCH) {
+      throw new Error(`Too many ids provided (max ${MAX_IDS_BATCH})`);
+    }
     const user = await getOptionalAuthUser(ctx);
     if (!user) {
       return [];
@@ -799,6 +804,9 @@ export const fetchBookmarkEmbeddingsByIds = query({
 export const fetchBookmarksByIds = query({
   args: { ids: v.array(v.id("bookmarks")) },
   handler: async (ctx, args) => {
+    if (args.ids.length > MAX_IDS_BATCH) {
+      throw new Error(`Too many ids provided (max ${MAX_IDS_BATCH})`);
+    }
     const user = await getOptionalAuthUser(ctx);
     if (!user) {
       return [];

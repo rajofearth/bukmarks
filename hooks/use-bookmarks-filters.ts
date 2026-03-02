@@ -65,6 +65,21 @@ export function useBookmarksFilters({
   const [lastSemanticDurationMs, setLastSemanticDurationMs] = useState<
     number | null
   >(null);
+  const bookmarkDataVersion = useMemo(
+    () =>
+      bookmarks
+        .map((bookmark) =>
+          [
+            bookmark.id,
+            bookmark.folderId,
+            bookmark.title,
+            bookmark.url,
+            bookmark.description ?? "",
+          ].join("\u001f"),
+        )
+        .join("\u001e"),
+    [bookmarks],
+  );
   const latestRequestRef = useRef(0);
   const lastInputAtRef = useRef(0);
   const semanticResultCacheRef = useRef(new Map<string, string[]>());
@@ -138,7 +153,7 @@ export function useBookmarksFilters({
       return;
     }
 
-    const semanticKey = `${semanticDtype}|${isMobile ? "mobile" : selectedFolder}|${debouncedSemanticQuery
+    const semanticKey = `${bookmarkDataVersion}|${semanticDtype}|${isMobile ? "mobile" : selectedFolder}|${debouncedSemanticQuery
       .trim()
       .toLowerCase()}`;
     const cachedIds = semanticResultCacheRef.current.get(semanticKey);
@@ -246,6 +261,7 @@ export function useBookmarksFilters({
     semanticDtype,
     semanticSearch,
     isSemanticActive,
+    bookmarkDataVersion,
   ]);
 
   const folderFilteredBookmarks = useMemo(() => {
@@ -262,9 +278,12 @@ export function useBookmarksFilters({
   );
 
   const filteredBookmarks = useMemo(() => {
+    const lexicalQuery = debouncedLexicalQuery.trim().toLowerCase();
+    const semanticQuery = debouncedSemanticQuery.trim().toLowerCase();
     if (
-      !debouncedLexicalQuery.trim() ||
-      !debouncedSemanticQuery.trim() ||
+      !lexicalQuery ||
+      !semanticQuery ||
+      lexicalQuery !== semanticQuery ||
       !semanticIds ||
       semanticIds.length === 0
     ) {
@@ -291,13 +310,21 @@ export function useBookmarksFilters({
   ]);
 
   const isSemanticRankedSearch = useMemo(() => {
+    const lexicalQuery = debouncedLexicalQuery.trim().toLowerCase();
+    const semanticQuery = debouncedSemanticQuery.trim().toLowerCase();
     return (
       isSemanticActive &&
-      debouncedLexicalQuery.trim().length > 0 &&
+      lexicalQuery.length > 0 &&
+      lexicalQuery === semanticQuery &&
       semanticIds !== null &&
       semanticIds.length > 0
     );
-  }, [debouncedLexicalQuery, semanticIds, isSemanticActive]);
+  }, [
+    debouncedLexicalQuery,
+    debouncedSemanticQuery,
+    semanticIds,
+    isSemanticActive,
+  ]);
 
   const sortedFilteredBookmarks = useMemo(() => {
     if (isSemanticRankedSearch) {

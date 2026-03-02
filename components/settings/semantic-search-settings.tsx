@@ -13,7 +13,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -434,10 +434,12 @@ export function SemanticSearchSettings() {
   // ─── Derived ─────────────────────────────────────────────────────
   const hasBookmarks = (bookmarks?.length ?? 0) > 0;
   const canIndex = semanticSearchEnabled && hasBookmarks;
+  const runtimeDtypeLabelId = useId();
   const isFullyIndexed =
     (embeddingStats?.indexedBookmarks ?? 0) ===
       (embeddingStats?.totalBookmarks ?? 0) &&
     (embeddingStats?.pendingBookmarks ?? 0) === 0 &&
+    (embeddingStats?.staleBookmarks ?? 0) === 0 &&
     (embeddingStats?.totalBookmarks ?? 0) > 0;
 
   const toIndexPayload = useCallback(
@@ -470,7 +472,9 @@ export function SemanticSearchSettings() {
         <div className={rowClass}>
           <div className="flex items-center gap-2">
             <Brain className="size-4 text-muted-foreground shrink-0" />
-            <span className="text-sm">Runtime dtype</span>
+            <span id={runtimeDtypeLabelId} className="text-sm">
+              Runtime dtype
+            </span>
           </div>
           <Select
             value={semanticDtype}
@@ -478,7 +482,10 @@ export function SemanticSearchSettings() {
               updateSettings({ semanticDtype: value as EmbeddingDtype })
             }
           >
-            <SelectTrigger className="w-24 h-8 text-xs">
+            <SelectTrigger
+              aria-labelledby={runtimeDtypeLabelId}
+              className="w-24 h-8 text-xs"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

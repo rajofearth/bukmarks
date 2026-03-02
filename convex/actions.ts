@@ -154,7 +154,13 @@ export const semanticSearchBookmarks = action({
       {
         vector: args.queryEmbedding,
         limit: topK,
-        filter: (q) => q.eq("userId", user._id),
+        filter: (q) =>
+          args.selectedFolder
+            ? q.and(
+                q.eq("userId", user._id),
+                q.eq("folderId", args.selectedFolder),
+              )
+            : q.eq("userId", user._id),
       },
     );
 

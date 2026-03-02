@@ -129,7 +129,11 @@ export function BookmarksPage() {
     [semanticSearchEnabled],
   );
 
-  const isIndexingIncomplete = (embeddingStats?.pendingBookmarks ?? 0) > 0;
+  const pendingCount = embeddingStats?.pendingBookmarks ?? 0;
+  const staleCount = embeddingStats?.staleBookmarks ?? 0;
+  const indexedCount = embeddingStats?.indexedBookmarks ?? 0;
+  const totalCount = embeddingStats?.totalBookmarks ?? 0;
+  const isIndexingIncomplete = pendingCount + staleCount > 0;
 
   useEffect(() => {
     if (isFolderSearchMode) {
@@ -153,11 +157,8 @@ export function BookmarksPage() {
     }
 
     hasShownSemanticWarningRef.current = true;
-    const pendingCount = embeddingStats?.pendingBookmarks ?? 0;
-    const indexedCount = embeddingStats?.indexedBookmarks ?? 0;
-    const totalCount = embeddingStats?.totalBookmarks ?? 0;
     toast.warning(
-      `Semantic results may be incomplete — ${pendingCount} bookmarks not yet indexed`,
+      `Semantic results may be incomplete — ${pendingCount} pending, ${staleCount} stale`,
       {
         description: `${indexedCount}/${totalCount} indexed. You can run indexing in Settings.`,
         action: {
@@ -167,9 +168,10 @@ export function BookmarksPage() {
       },
     );
   }, [
-    embeddingStats?.indexedBookmarks,
-    embeddingStats?.pendingBookmarks,
-    embeddingStats?.totalBookmarks,
+    indexedCount,
+    pendingCount,
+    staleCount,
+    totalCount,
     isIndexingIncomplete,
     router,
     searchMode,

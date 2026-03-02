@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { EMBEDDING_DIM } from "../lib/semantic-search";
 
 export default defineSchema({
   // precise profile settings that extend the base user
@@ -54,7 +55,7 @@ export default defineSchema({
     .index("by_user_bookmark", ["userId", "bookmarkId"])
     .vectorIndex("by_embedding", {
       vectorField: "embedding",
-      dimensions: 256,
+      dimensions: EMBEDDING_DIM,
       filterFields: ["userId", "folderId"],
     }),
 
