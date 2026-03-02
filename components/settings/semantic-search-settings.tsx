@@ -186,15 +186,13 @@ function ProgressDisplay({
                             <span>Indexing complete</span>
                         </div>
                     ) : (
-                        <span>Indexing {processedCount} / {totalCount}</span>
+                        <span>
+                            Indexing {processedCount} / {totalCount}
+                            {indexEta && <span className="text-muted-foreground/70"> · {indexEta}</span>}
+                        </span>
                     )}
                     <span className="shrink-0 tabular-nums">{pct}%</span>
                 </div>
-                {indexEta && phase !== "done" && (
-                    <p className="text-[11px] text-muted-foreground/70 tabular-nums -mt-0.5">
-                        {indexEta}
-                    </p>
-                )}
                 <ProgressBar value={pct} />
                 {errorCount > 0 && (
                     <p className="text-xs text-destructive">Failed: {errorCount}</p>
@@ -299,7 +297,7 @@ function ModelCacheManager({ fileProgress }: { fileProgress: Record<string, { lo
     const hasCache = cacheSize !== null && cacheSize > 0;
 
     return (
-        <div className="flex items-center justify-between gap-3 py-3">
+        <div className="flex items-center justify-between gap-3 py-4">
             <div className="flex items-center gap-2 min-w-0">
                 <HardDrive className="size-4 text-muted-foreground shrink-0" />
                 <div className="flex flex-col min-w-0">
@@ -515,7 +513,7 @@ export function SemanticSearchSettings() {
                 </AnimatePresence>
 
                 {/* Action buttons — adapt to current phase */}
-                <div className="flex flex-wrap gap-2 pt-1 pb-1">
+                <div className="flex flex-wrap gap-2 py-3">
                     {/* Model loading: Stop */}
                     {phase === "model" && (
                         <button
