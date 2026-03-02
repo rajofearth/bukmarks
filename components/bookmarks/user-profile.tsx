@@ -140,8 +140,8 @@ export function UserProfile({
       {/* Dropdown Menu - appears above the button */}
       <div
         className={cn(
-          "absolute bottom-full left-2 right-2 mb-2 origin-bottom",
-          "rounded-lg border border-sidebar-border bg-sidebar shadow-lg",
+          "absolute bottom-full left-2 right-2 z-50 mb-2 origin-bottom",
+          "rounded-lg border border-border bg-popover text-popover-foreground shadow-lg",
           "transition-all duration-150 ease-out",
           isOpen
             ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
@@ -155,7 +155,7 @@ export function UserProfile({
           avatarClassName="size-10"
         />
 
-        <Separator className="bg-sidebar-border" />
+        <Separator className="bg-border" />
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 gap-1 p-2">
@@ -171,7 +171,7 @@ export function UserProfile({
           />
         </div>
 
-        <Separator className="bg-sidebar-border" />
+        <Separator className="bg-border" />
 
         {/* Quick Actions */}
         <div className="p-1">
@@ -209,7 +209,7 @@ export function UserProfile({
               />
             )}
 
-            <Separator className="my-1 bg-sidebar-border" />
+            <Separator className="my-1 bg-border" />
 
             <MenuItem
               icon={LogOut}
@@ -254,13 +254,13 @@ interface StatItemProps {
 
 function StatItem({ icon: Icon, value, label }: StatItemProps) {
   return (
-    <div className="flex items-center gap-2 rounded-md px-3 py-2 bg-sidebar-accent/50">
-      <Icon className="size-4 text-sidebar-foreground/50" />
+    <div className="flex items-center gap-2 rounded-md px-3 py-2 bg-muted">
+      <Icon className="size-4 text-muted-foreground" />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold tabular-nums text-sidebar-foreground">
+        <p className="text-sm font-semibold tabular-nums text-foreground">
           {value}
         </p>
-        <p className="text-[10px] text-sidebar-foreground/50">{label}</p>
+        <p className="text-[10px] text-muted-foreground">{label}</p>
       </div>
     </div>
   );
@@ -292,8 +292,8 @@ function MenuItem({
             "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm",
             "transition-colors duration-100",
             variant === "default" && [
-              "text-sidebar-foreground",
-              "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+              "text-popover-foreground",
+              "hover:bg-accent hover:text-accent-foreground",
             ],
             variant === "destructive" && [
               "text-destructive",
@@ -304,7 +304,7 @@ function MenuItem({
           <Icon className="size-4 shrink-0" />
           <span className="flex-1 text-left">{label}</span>
           {shortcut && (
-            <kbd className="ml-auto rounded bg-sidebar-accent px-1.5 py-0.5 text-[10px] font-medium text-sidebar-foreground/60">
+            <kbd className="ml-auto rounded bg-accent px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
               {shortcut}
             </kbd>
           )}

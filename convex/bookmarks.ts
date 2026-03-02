@@ -592,10 +592,10 @@ export const getEmbeddingIndexStats = query({
       };
     }
     const stats = await getEmbeddingIndexStatsState(ctx, user._id);
-    const totalBookmarks: number;
-    const indexedBookmarks: number;
-    const staleBookmarks: number;
-    const lastIndexedAt: number | null;
+    let totalBookmarks: number;
+    let indexedBookmarks: number;
+    let staleBookmarks: number;
+    let lastIndexedAt: number | null;
 
     if (stats) {
       totalBookmarks = stats.totalBookmarks;
