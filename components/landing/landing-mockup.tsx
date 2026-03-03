@@ -23,15 +23,22 @@ export function LandingMockup({ prefersReducedMotion = false }: LandingMockupPro
       </div>
       <div className="absolute inset-0 z-[1]" style={{ background: LANDING_GRADIENT }} aria-hidden />
 
-      {/* App preview placeholder */}
+      {/* Video in rounded frame */}
       <div className="relative z-10 flex justify-center items-center px-4">
         <motion.div
-          className="w-[90%] max-w-[800px] rounded-xl shadow-2xl overflow-hidden border border-border min-h-[200px] flex items-center justify-center bg-muted/30"
+          className="w-[90%] max-w-[800px] rounded-xl shadow-2xl overflow-hidden border border-border"
           initial={{ opacity: 0, y: 24 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration, ease: EASE }}
         >
-          <p className="text-muted-foreground text-sm">App preview coming soon</p>
+          <video
+            src="/demo-vid/bukmarks.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-auto block"
+          />
         </motion.div>
       </div>
     </section>
