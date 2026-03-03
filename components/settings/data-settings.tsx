@@ -117,7 +117,7 @@ export function DataSettings() {
       const result = await deleteAllData({});
       setDeleteState("done");
       toast.success("All bookmark data deleted", {
-        description: `${result.bookmarksDeleted} bookmarks and ${result.foldersDeleted} folders removed.`,
+        description: `${result.bookmarksDeleted} bookmarks, ${result.foldersDeleted} folders, ${result.embeddingsDeleted} embeddings, and ${result.embeddingStatsDeleted ?? 0} embedding stats removed.`,
       });
 
       setTimeout(() => {
@@ -306,66 +306,66 @@ export function DataSettings() {
             {/* Dropzone */}
             {(importState.status === "idle" ||
               importState.status === "error") && (
-                <motion.div
-                  key="dropzone"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.3 }}
-                  className="space-y-3"
-                >
-                  <button
-                    type="button"
-                    onDrop={handleDrop}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onClick={() => fileInputRef.current?.click()}
-                    className={cn(
-                      "relative w-full cursor-pointer rounded-xl border-2 border-dashed px-6 py-8 text-center transition-all duration-200",
-                      isDragging
-                        ? "border-foreground/30 bg-muted/60 scale-[1.01]"
-                        : "border-border hover:border-foreground/20 hover:bg-muted/30",
-                    )}
-                  >
-                    <div className="flex flex-col items-center gap-3">
-                      <motion.div
-                        className={cn(
-                          "flex size-10 items-center justify-center rounded-lg transition-colors",
-                          isDragging ? "bg-foreground/10" : "bg-muted",
-                        )}
-                        animate={isDragging ? { scale: 1.08 } : { scale: 1 }}
-                      >
-                        <Upload className="size-4 text-muted-foreground" />
-                      </motion.div>
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium">Drop your file here</p>
-                        <p className="text-xs text-muted-foreground">
-                          or click to pick it
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".html,.htm"
-                    onChange={handleFileInput}
-                    className="sr-only"
-                    aria-label="Upload bookmark file"
-                  />
-
-                  {importState.status === "error" && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex items-start gap-2 rounded-lg bg-destructive/10 px-3 py-2.5 text-xs text-destructive"
-                    >
-                      <AlertCircle className="size-3.5 mt-0.5 shrink-0" />
-                      <span>{importState.message}</span>
-                    </motion.div>
+              <motion.div
+                key="dropzone"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-3"
+              >
+                <button
+                  type="button"
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={cn(
+                    "relative w-full cursor-pointer rounded-xl border-2 border-dashed px-6 py-8 text-center transition-all duration-200",
+                    isDragging
+                      ? "border-foreground/30 bg-muted/60 scale-[1.01]"
+                      : "border-border hover:border-foreground/20 hover:bg-muted/30",
                   )}
-                </motion.div>
-              )}
+                >
+                  <div className="flex flex-col items-center gap-3">
+                    <motion.div
+                      className={cn(
+                        "flex size-10 items-center justify-center rounded-lg transition-colors",
+                        isDragging ? "bg-foreground/10" : "bg-muted",
+                      )}
+                      animate={isDragging ? { scale: 1.08 } : { scale: 1 }}
+                    >
+                      <Upload className="size-4 text-muted-foreground" />
+                    </motion.div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">Drop your file here</p>
+                      <p className="text-xs text-muted-foreground">
+                        or click to pick it
+                      </p>
+                    </div>
+                  </div>
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".html,.htm"
+                  onChange={handleFileInput}
+                  className="sr-only"
+                  aria-label="Upload bookmark file"
+                />
+
+                {importState.status === "error" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-start gap-2 rounded-lg bg-destructive/10 px-3 py-2.5 text-xs text-destructive"
+                  >
+                    <AlertCircle className="size-3.5 mt-0.5 shrink-0" />
+                    <span>{importState.message}</span>
+                  </motion.div>
+                )}
+              </motion.div>
+            )}
 
             {/* Parsing */}
             {importState.status === "parsing" && (
@@ -528,7 +528,8 @@ export function DataSettings() {
           <div className="space-y-1">
             <h3 className="text-base font-medium">Danger Zone</h3>
             <p className="text-sm text-muted-foreground">
-              Permanently delete all bookmarks and folders from your account.
+              Permanently delete bookmarks, folders, embeddings, and embedding
+              stats from your account.
             </p>
           </div>
 
@@ -547,7 +548,8 @@ export function DataSettings() {
                   <p className="text-sm font-medium">Delete all data</p>
                   <p className="text-xs text-muted-foreground">
                     This action is irreversible and removes all imported and
-                    created bookmark data.
+                    created bookmark data, including semantic embeddings and
+                    indexing stats.
                   </p>
                 </div>
               </div>

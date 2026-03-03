@@ -961,10 +961,30 @@ export const deleteAllData = mutation({
       await ctx.db.delete(stats._id);
     }
 
+    // Defensive second-pass cleanup in case additional rows appeared mid-delete.
+    const [remainingEmbeddings, remainingIndexStats] = await Promise.all([
+      ctx.db
+        .query("bookmarkEmbeddings")
+        .withIndex("by_user_id", (q) => q.eq("userId", user._id))
+        .collect(),
+      ctx.db
+        .query("embeddingIndexStats")
+        .withIndex("by_user_id", (q) => q.eq("userId", user._id))
+        .collect(),
+    ]);
+
+    for (const embedding of remainingEmbeddings) {
+      await ctx.db.delete(embedding._id);
+    }
+    for (const stats of remainingIndexStats) {
+      await ctx.db.delete(stats._id);
+    }
+
     return {
       bookmarksDeleted: bookmarks.length,
       foldersDeleted: folders.length,
-      embeddingsDeleted: embeddings.length,
+      embeddingsDeleted: embeddings.length + remainingEmbeddings.length,
+      embeddingStatsDeleted: indexStats.length + remainingIndexStats.length,
     };
   },
 });
