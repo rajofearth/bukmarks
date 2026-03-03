@@ -5,6 +5,7 @@ import {
 } from "@convex-dev/better-auth";
 import { convex } from "@convex-dev/better-auth/plugins";
 import { betterAuth } from "better-auth/minimal";
+import { genericOAuth } from "better-auth/plugins/generic-oauth";
 import { components, internal } from "./_generated/api";
 import type { DataModel } from "./_generated/dataModel";
 import { query } from "./_generated/server";
@@ -15,6 +16,31 @@ const isProduction = !siteUrl.startsWith("http://localhost");
 const trustedOrigins = Array.from(
   new Set([siteUrl, "https://bukmarks.vercel.app", "http://localhost:3000"]),
 );
+
+type TelegramOidcClaims = {
+  sub?: string;
+  email?: string;
+  email_verified?: boolean;
+  name?: string;
+  given_name?: string;
+  family_name?: string;
+  username?: string;
+  picture?: string;
+};
+
+function decodeJwtPayload(token: string): TelegramOidcClaims | null {
+  const payload = token.split(".")[1];
+  if (!payload) return null;
+
+  const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+
+  try {
+    return JSON.parse(atob(padded)) as TelegramOidcClaims;
+  } catch {
+    return null;
+  }
+}
 
 // The component client has methods needed for integrating Convex with Better Auth,
 // as well as helper methods for general use.
@@ -66,6 +92,39 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
     plugins: [
       // The Convex plugin is required for Convex compatibility
       convex({ authConfig }),
+      genericOAuth({
+        config: [
+          {
+            providerId: "telegram",
+            clientId: process.env.TELEGRAM_CLIENT_ID as string,
+            clientSecret: process.env.TELEGRAM_CLIENT_SECRET as string,
+            discoveryUrl:
+              "https://oauth.telegram.org/.well-known/openid-configuration",
+            scopes: ["openid", "profile", "email"],
+            // Telegram's OIDC implementation returns profile claims in id_token.
+            getUserInfo: async (token) => {
+              const claims = token.idToken
+                ? decodeJwtPayload(token.idToken)
+                : null;
+              if (!claims?.sub) return null;
+
+              return {
+                id: claims.sub,
+                email: claims.email,
+                emailVerified: claims.email_verified ?? false,
+                name: (() => {
+                  const fullName = [claims.given_name, claims.family_name]
+                    .filter(Boolean)
+                    .join(" ");
+                  const primaryName = claims.name ?? fullName;
+                  return primaryName || claims.username || "Telegram User";
+                })(),
+                image: claims.picture,
+              };
+            },
+          },
+        ],
+      }),
     ],
   });
 };

@@ -23,6 +23,17 @@ export function AuthForm({ className }: AuthFormProps) {
     }
   };
 
+  const handleTelegramLogin = async () => {
+    setIsLoading(true);
+    try {
+      await authClient.signIn.oauth2({ providerId: "telegram" });
+    } catch (error) {
+      console.error("Telegram login failed:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className={cn("w-full max-w-sm space-y-6", className)}>
       <div className="flex flex-col space-y-2 text-center">
@@ -37,6 +48,7 @@ export function AuthForm({ className }: AuthFormProps) {
         isLoading={isLoading}
         onGoogleClick={() => handleSocialLogin("google")}
         onGithubClick={() => handleSocialLogin("github")}
+        onTelegramClick={handleTelegramLogin}
       />
     </div>
   );
